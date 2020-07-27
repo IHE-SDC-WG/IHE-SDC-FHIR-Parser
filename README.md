@@ -13,4 +13,6 @@ To generate a WAR file, execute the following on the command line:
 ```
 C:\sdcparser>mvn package
 ```
+The WAR file will be geenerated to the /target folder
 ## Libraries used
+https://hapifhir.io/
