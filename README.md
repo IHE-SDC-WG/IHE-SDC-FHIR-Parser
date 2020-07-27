@@ -12,3 +12,4 @@ C:\sdcparser>mvn package
 The WAR file will be geenerated to the /target folder
 ## Libraries used
 https://hapifhir.io/
+https://eclipse-ee4j.github.io/jersey/
