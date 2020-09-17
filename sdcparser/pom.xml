@@ -59,6 +59,6 @@
 		
 	</dependencies>
 	<build>
-		<finalName>sdcparser</finalName>
+		<finalName>sdcparserE</finalName>
 	</build>
 </project>

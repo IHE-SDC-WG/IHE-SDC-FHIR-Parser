@@ -29,7 +29,15 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -42,11 +50,28 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.hl7.fhir.instance.model.api.IIdType;
+import org.hl7.fhir.r4.model.Attachment;
+import org.hl7.fhir.r4.model.Base64BinaryType;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
+import org.hl7.fhir.r4.model.Bundle.BundleType;
+import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.DocumentReference;
+import org.hl7.fhir.r4.model.DocumentReference.DocumentReferenceContentComponent;
+import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
+import org.hl7.fhir.r4.model.Narrative;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Observation.ObservationStatus;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.Provenance;
+import org.hl7.fhir.r4.model.Provenance.ProvenanceAgentComponent;
 import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.Type;
+import org.hl7.fhir.r4.model.codesystems.ProvenanceAgentRole;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -54,15 +79,18 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.google.common.base.Charsets;
+
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.api.ServerValidationModeEnum;
+import ca.uhn.fhir.rest.client.interceptor.AdditionalRequestHeadersInterceptor;
 
 @Path("/")
 public class Interceptor {
 
 	FhirContext ctx;
+	String provenanceHeader = "{\"resourceType\": \"Provenance\",\"meta\": {\"versionId\": \"1\",\"lastUpdated\": \"2020-08-31T20:44:24.994+00:00\"},\"recorded\": \"2020-05-14T13:44:24.1703291-07:00\",\"agent\": [{\"type\": {\"text\": \"Joel and Alex testing\"}}]}";
 
 	public Interceptor() {
 		this.ctx = FhirContext.forR4();
@@ -73,14 +101,18 @@ public class Interceptor {
 	public String sayHello() {
 		return "<h1>Welcome to Canada Health Infoway's SDC Parser Service</h1>"
 				+ "<p></p><h3> Optional Paremeters: server = [FHIR Server endpoint the resources will be posted to]</h3>" +
-				"<h3>Ex: /sdcparser?server=http:/test.fhir.org/r4</h3>";
+				"<h3>Ex: /sdcparser?server=http://test.fhir.org/r4</h3>" + 
+				"<p></p><h3> Optional Paremeters: format = json/xml </h3>" +
+				"<h3>Ex: /sdcparser?server=http://test.fhir.org/r4&format=json</h3>";
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_XML)
-	@Produces(MediaType.TEXT_PLAIN)
-	public String loadXMLFromString(String sdcForm, @QueryParam("server") String server) {
-		System.out.println("this is what I got: \n" + sdcForm);
+	@Produces(MediaType.APPLICATION_XML)
+	public String loadXMLFromString(String sdcForm, @QueryParam("server") String server, @QueryParam("format") String format) {
+		if(format == null || format.isEmpty() || format.equals("")) {
+			format = "xml";
+		}
 		StringBuilder stringbuilder = new StringBuilder();
 		boolean noServer = true;
 		IGenericClient client = null;
@@ -94,8 +126,23 @@ public class Interceptor {
 			} catch (MalformedURLException mfe) {
 				return "There is something wrong with the URL of the server!!!!!";
 			}
+			String provenanceHeader = "{\"resourceType\": \"Provenance\",\"meta\": {\"versionId\": \"1\",\"lastUpdated\": \"TIME_STAMP\"},\"recorded\": \"TIME_STAMP\",\"agent\": [{\"type\": {\"text\": \"Joel and Alex testing\"}}]}";
+			provenanceHeader = provenanceHeader.replaceAll(Pattern.quote("TIME_STAMP"), getTimeStamp());
+			AdditionalRequestHeadersInterceptor interceptor = new AdditionalRequestHeadersInterceptor();
+			if(format.equalsIgnoreCase("xml")){
+				interceptor.addHeaderValue("Content-Type", "application/fhir+xml");
+			}
+			else if(format.equalsIgnoreCase("json")) {
+				interceptor.addHeaderValue("Content-Type", "application/fhir+json");
+			}
+			else {
+				interceptor.addHeaderValue("Content-Type", "application/fhir+xml");
+			}
+			interceptor.addHeaderValue("X-Provenance", provenanceHeader);
 			client = ctx.newRestfulGenericClient(url.toString());
 			ctx.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
+			//client.registerInterceptor(interceptor);
+			
 		}
 
 		try {
@@ -104,18 +151,29 @@ public class Interceptor {
 			InputSource is = new InputSource(new StringReader(sdcForm));
 			Document document = builder.parse(is);
 			ArrayList<Observation> observations = parseSDCForm(document, ctx);
-			int obsListSize = observations.size();
-			for (int i = 0; i < obsListSize; i++) {
-				Observation obs = observations.get(i);
-				if (!noServer) {
-					MethodOutcome outcome = client.create().resource(obs).execute();
-					if (outcome.getCreated()) {
-						IIdType id = outcome.getId();
-						obs.setId(id);
-					}
+			//create bundle
+			String patientUUID = getUUID(); 
+			String docRefUUID = getUUID();
+			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, docRefUUID);
+			String encoded = null;
+			if(format.equalsIgnoreCase("xml")) {
+				encoded  = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);
+			}
+			else {
+				encoded = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(bundle);
+			}
+					
+			if(noServer) {
+				stringbuilder.append(encoded);
+			}
+			else {
+				Bundle resp = client.transaction().withBundle(bundle).execute();
+				if(format.equalsIgnoreCase("json")) {
+					stringbuilder.append(ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(resp));
 				}
-				String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observations.get(i));
-				stringbuilder.append(encoded + "\n************************************************************\n");
+				else {
+					stringbuilder.append(ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(resp));
+				}
 			}
 		} catch (ParserConfigurationException e) {
 			return e.getMessage();
@@ -222,7 +280,92 @@ public class Interceptor {
 		for (int i = 0; i < questionList.size(); i++) {
 		}
 	}
+	
+	public static Bundle createBundle(ArrayList<Observation> Observations, FhirContext ctx, String sdcForm, Document form, String patientUUID, String docRefUUID) {
+		Bundle bundle = new Bundle();
+		String bundleUUID = getUUID();  
+		bundle.setId(bundleUUID);
+		bundle.setType(BundleType.TRANSACTION);
+		//Add patient resource
+		BundleEntryComponent patient = new BundleEntryComponent();
+		patient.setFullUrl(patientUUID);
+		patient.setResource(createPatient(ctx));
+		BundleEntryRequestComponent patientRequest = new BundleEntryRequestComponent();
+		patientRequest.setMethod(HTTPVerb.PUT);
+		patientRequest.setUrl("Patient?identifier=urn:system|JoelAlexPatient");
+		patient.setRequest(patientRequest);
+		bundle.addEntry(patient);
+		//Add document reference resource
+		BundleEntryComponent docRef = new BundleEntryComponent();
+		docRef.setFullUrl(docRefUUID);
+		docRef.setResource(createDocReference(ctx, sdcForm, form ,patientUUID));
+		BundleEntryRequestComponent docRefRequest = new BundleEntryRequestComponent();
+		docRefRequest.setMethod(HTTPVerb.POST);
+		docRefRequest.setUrl("DocumentReference");
+		docRef.setRequest(docRefRequest);
+		bundle.addEntry(docRef);
+		//add observations
+		for(Observation obs: Observations) {
+			obs.setSubject(new Reference( patientUUID ));
+			obs.addDerivedFrom().setReference(docRefUUID);
+			BundleEntryComponent bec = new BundleEntryComponent();
+			bec.setFullUrl(getUUID());
+			BundleEntryRequestComponent berc = new BundleEntryRequestComponent();
+			berc.setMethod(HTTPVerb.POST);
+			berc.setUrl("Observation");
+			bec.setRequest(berc);
+			bec.setResource(obs);
+			bundle.addEntry(bec);
+		}
+		return bundle;
+	}
 
+	public static Patient createPatient(FhirContext ctx) {
+		Patient patient = new Patient();
+		patient.addIdentifier().setSystem("urn:system").setValue("JoelAlexPatient");
+		patient.addName().setFamily("Rodriguez").addGiven("Jose");
+		patient.setGender(org.hl7.fhir.r4.model.Enumerations.AdministrativeGender.MALE);
+		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
+		return patient;
+	}
+	public static Practitioner createPractitioner(FhirContext ctx) {
+		Practitioner pract = new Practitioner();
+		pract.addName().setFamily("Bit").addGiven("Rex");
+		pract.addIdentifier().setSystem("http://someIdentifier.com").setValue("pathpract1");
+		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(pract);
+		return pract;
+	}
+	public static Provenance createProvenance(FhirContext ctx, String bundleUUID) {
+		DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
+		Date dateobj = new Date();
+		Provenance provenance = new Provenance();
+		provenance.setRecorded(dateobj);
+		Type type = new DateTimeType();
+		provenance.setOccurred(type);
+		provenance.getTargetFirstRep().setReference("Bundle/" + bundleUUID);
+		ProvenanceAgentComponent pac = new ProvenanceAgentComponent();
+		pac.getRoleFirstRep().getCodingFirstRep().setCode(ProvenanceAgentRole.ASSEMBLER.toString())
+		.setDisplay(ProvenanceAgentRole.ASSEMBLER.getDisplay()).setSystem("http://terminology.hl7.org/CodeSystem/provenance-participant-type");
+		provenance.addAgent(pac);
+		return provenance;
+	}
+	public static DocumentReference createDocReference(FhirContext ctx, String sdcForm, Document form,  String patientUUID) {
+		DocumentReference docRef = new DocumentReference();
+		Narrative narry = new Narrative();
+		narry.setDivAsString("This DocumentReference was created by the Infoway Parser for form " + getFormID(form));
+		docRef.setStatus(DocumentReferenceStatus.CURRENT);
+		docRef.setText(narry);
+		docRef.getMasterIdentifier().setSystem("https://cap.org").setValue(getFormID(form));
+		docRef.setSubject(new Reference(patientUUID));
+		docRef.setDate(new Date());
+		DocumentReferenceContentComponent drcc = new DocumentReferenceContentComponent();
+		Attachment attachment = new Attachment();
+		attachment.setContentType("text/plain");
+		attachment.setDataElement(new Base64BinaryType(sdcForm.getBytes()));
+		drcc.setAttachment(attachment);
+		docRef.addContent(drcc);
+		return docRef;
+	}
 	/**
 	 * This will traverse through the list of selected questions
 	 * 
@@ -280,8 +423,6 @@ public class Interceptor {
 					observations.add(observation);
 					addComponentToObservation(observation, listElementsAnswered);
 					String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-					System.out.println(encoded);
-					System.out.println("*******************************************************************");
 				}
 			}
 		}
@@ -303,8 +444,7 @@ public class Interceptor {
 			FhirContext ctx) {
 
 		Observation observation = new Observation();
-		observation.setSubject(new Reference("Patient/6754"));
-		observation.addPerformer().setReference("Practitioner/pathpract1");
+		//observation.setSubject(new Reference("Patient/6754"));
 		observation.addIdentifier().setSystem("https://CAP.org")
 				.setValue(id + "#" + questionElement.getAttribute("ID"));
 		observation.setStatus(ObservationStatus.FINAL);
@@ -312,22 +452,21 @@ public class Interceptor {
 				.setDisplay(questionElement.getAttribute("title"));
 		observation.setValue(new CodeableConcept()).getValueCodeableConcept().addCoding().setSystem("https://CAP.org")
 				.setCode(listItemElement.getAttribute("ID")).setDisplay(listItemElement.getAttribute("title"));
-		observation.addDerivedFrom().setReference("DocumentReference/" + id);
+		//observation.addDerivedFrom().setReference("DocumentReference/" + id);
 		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-		System.out.println(encoded);
-		System.out.println("*******************************************************************");
 		return observation;
 
 	}
 
 	public static Observation buildMultiSelectObservationResource(Element questionElement, String id, FhirContext ctx) {
 		Observation observation = new Observation();
+		//observation.setSubject(new Reference("Patient/6754"));
 		observation.addIdentifier().setSystem("https://CAP.org")
 				.setValue(id + "." + questionElement.getAttribute("ID"));
 		observation.setStatus(ObservationStatus.FINAL);
 		observation.getCode().addCoding().setSystem("https://CAP.org").setCode(questionElement.getAttribute("ID"))
 				.setDisplay(questionElement.getAttribute("title"));
-		observation.addDerivedFrom().setReference("DocumentReference/" + id);
+		//observation.addDerivedFrom().setReference("DocumentReference/" + id);
 		return observation;
 	}
 
@@ -341,6 +480,24 @@ public class Interceptor {
 		}
 
 		return observation;
+	}
+	
+	/**
+	 * Generated a Globally Unique Identifier
+	 * @return
+	 */
+	public static String getUUID() {
+		String uuid = "urn:uuid:" + String.valueOf(UUID.randomUUID());
+		return uuid;
+	}
+	
+	/*
+	 * Produces the current time stamp of the instant that it is called
+	 */
+	public static String getTimeStamp() {
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Instant instant = timestamp.toInstant();
+		return instant.toString();
 	}
 
 	/**
