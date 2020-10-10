@@ -380,53 +380,66 @@ public class Interceptor {
 		Observation observation = null;
 		for (int i = 0; i < questionList.getLength(); i++) {
 			Element questionElement = (Element) questionList.item(i);
+			String questionID = questionElement.getAttribute("ID");
 			// get the listFieldElement
-			boolean isMultiSelect = getListFieldEelementToCheckForMultiSelect(questionElement);
-			// get the ListItems under this question where selected = true
-			NodeList listItemList = questionElement.getElementsByTagName("ListItem");
-			if (!isMultiSelect) {
-				for (int j = 0; j < listItemList.getLength(); j++) {
-					Element listItemElement = (Element) listItemList.item(j);
-					if (listItemElement.hasAttribute("selected")) {
-						Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode()
-								.getParentNode();
-						if (parentQuestion.getAttribute("ID").equals(questionElement.getAttribute("ID"))) {
-							System.out.println("QUESTION.ID: " + questionElement.getAttribute("ID"));
-							System.out.println("LISTITEM.ID: " + listItemElement.getAttribute("ID"));
-							System.out.println("LISTITEM.TITLE: " + listItemElement.getAttribute("title"));
-							System.out.println("*******************************************************************");
-							observation = buildObservationResource(questionElement, listItemElement, Id, ctx);
-							observations.add(observation);
-						}
+			boolean isListQuestion = isQuestionAListQuestion(questionElement);
+			if (isListQuestion) {
+				boolean isMultiSelect = getListFieldEelementToCheckForMultiSelect(questionElement);
+				// get the ListItems under this question where selected = true
+				NodeList listItemList = questionElement.getElementsByTagName("ListItem");
+				if (!isMultiSelect) {
+					for (int j = 0; j < listItemList.getLength(); j++) {
+						Element listItemElement = (Element) listItemList.item(j);
+						if (listItemElement.hasAttribute("selected")) {
+							Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode()
+									.getParentNode();
+							if (parentQuestion.getAttribute("ID").equals(questionElement.getAttribute("ID"))) {
+								System.out.println("QUESTION.ID: " + questionElement.getAttribute("ID"));
+								System.out.println("LISTITEM.ID: " + listItemElement.getAttribute("ID"));
+								System.out.println("LISTITEM.TITLE: " + listItemElement.getAttribute("title"));
+								System.out.println("*******************************************************************");
+								observation = buildObservationResource(questionElement, listItemElement, Id, ctx);
+								observations.add(observation);
+							}
 
-					}
-				}
-			} else {
-
-				String questionID = questionElement.getAttribute("ID");
-				ArrayList<Element> listElementsAnswered = new ArrayList<Element>();
-				// check if there are any selected answers before hand!
-				for (int j = 0; j < listItemList.getLength(); j++) {
-					Element listItemElement = (Element) listItemList.item(j);
-					if (listItemElement.hasAttribute("selected")) {
-						Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode()
-								.getParentNode();
-						if (parentQuestion.getAttribute("ID").equals(questionID)) {
-							listElementsAnswered.add(listItemElement);
 						}
 					}
-				}
+				} else {
 
-				// Now if there are selected answers then only add them as components
-				if (!listElementsAnswered.isEmpty()) {
-					observation = buildMultiSelectObservationResource(questionElement, Id, ctx);
-					observations.add(observation);
-					addComponentToObservation(observation, listElementsAnswered);
-					String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
+					ArrayList<Element> listElementsAnswered = new ArrayList<Element>();
+					// check if there are any selected answers before hand!
+					for (int j = 0; j < listItemList.getLength(); j++) {
+						Element listItemElement = (Element) listItemList.item(j);
+						if (listItemElement.hasAttribute("selected")) {
+							Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode()
+									.getParentNode();
+							if (parentQuestion.getAttribute("ID").equals(questionID)) {
+								listElementsAnswered.add(listItemElement);
+							}
+						}
+					}
+
+					// Now if there are selected answers then only add them as components
+					if (!listElementsAnswered.isEmpty()) {
+						observation = buildMultiSelectObservationResource(questionElement, Id, ctx);
+						observations.add(observation);
+						addComponentToObservation(observation, listElementsAnswered);
+						String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
+						System.out.println(encoded);
+						System.out.println("*******************************************************************");
+					}
 				}
-			}
+			} //TODO: Add parsing text questions
 		}
 		return observations;
+	}
+	
+	public static boolean isQuestionAListQuestion(Element questionElement) {
+		NodeList listFieldElementList = questionElement.getElementsByTagName("ListField");
+		if (listFieldElementList.getLength() > 0) {
+			return true;
+		}
+		return false;
 	}
 
 	public static boolean getListFieldEelementToCheckForMultiSelect(Element questionElement) {
