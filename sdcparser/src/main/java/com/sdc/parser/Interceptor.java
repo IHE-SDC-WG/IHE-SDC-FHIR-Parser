@@ -52,6 +52,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Base64BinaryType;
+import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
@@ -62,6 +63,7 @@ import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DocumentReference;
 import org.hl7.fhir.r4.model.DocumentReference.DocumentReferenceContentComponent;
 import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
+import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.Narrative;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Observation.ObservationStatus;
@@ -69,7 +71,9 @@ import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Provenance;
 import org.hl7.fhir.r4.model.Provenance.ProvenanceAgentComponent;
+import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
 import org.hl7.fhir.r4.model.codesystems.ProvenanceAgentRole;
 import org.w3c.dom.Document;
@@ -91,6 +95,12 @@ public class Interceptor {
 
 	FhirContext ctx;
 	String provenanceHeader = "{\"resourceType\": \"Provenance\",\"meta\": {\"versionId\": \"1\",\"lastUpdated\": \"2020-08-31T20:44:24.994+00:00\"},\"recorded\": \"2020-05-14T13:44:24.1703291-07:00\",\"agent\": [{\"type\": {\"text\": \"Joel and Alex testing\"}}]}";
+	final static String INTEGER = "integer";
+	final static String DECIMAL = "decimal";
+	final static String STRING = "string";
+	final static String BOOLEAN = "boolean";
+	final static String DATE = "date";
+	final static String DATETIME = "dateTime";
 
 	public Interceptor() {
 		this.ctx = FhirContext.forR4();
@@ -383,6 +393,7 @@ public class Interceptor {
 			String questionID = questionElement.getAttribute("ID");
 			// get the listFieldElement
 			boolean isListQuestion = isQuestionAListQuestion(questionElement);
+			boolean isTextQuestion = isQuestionATextQuestion(questionElement);
 			if (isListQuestion) {
 				boolean isMultiSelect = getListFieldEelementToCheckForMultiSelect(questionElement);
 				// get the ListItems under this question where selected = true
@@ -429,7 +440,32 @@ public class Interceptor {
 						System.out.println("*******************************************************************");
 					}
 				}
-			} //TODO: Add parsing text questions
+			} else if (isTextQuestion) {
+				Element textQuestion = getTextQuestion(questionElement);
+				Element textQuestionResponse = getTextQuestionResponse(textQuestion);
+				if (isTextQuestionOfTypeAndHasResponse(INTEGER, textQuestionResponse)) {
+					buildAndAddObservationForType(INTEGER, textQuestionResponse, questionElement, Id, ctx,
+							observations);
+				} else if (isTextQuestionOfTypeAndHasResponse(DECIMAL, textQuestionResponse)) {
+					buildAndAddObservationForType(DECIMAL, textQuestionResponse, questionElement, Id, ctx,
+							observations);
+				} else if (isTextQuestionOfTypeAndHasResponse(STRING, textQuestionResponse)) {
+					buildAndAddObservationForType(STRING, textQuestionResponse, questionElement, Id, ctx, observations);
+				} else if (isTextQuestionOfTypeAndHasResponse(BOOLEAN, textQuestionResponse)) {
+					buildAndAddObservationForType(BOOLEAN, textQuestionResponse, questionElement, Id, ctx,
+							observations);
+				} else if (isTextQuestionOfTypeAndHasResponse(DATE, textQuestionResponse)) {
+					System.out.println("Question is date");
+				} else if (isTextQuestionOfTypeAndHasResponse(DATETIME, textQuestionResponse)) {
+					buildAndAddObservationForType(DATETIME, textQuestionResponse, questionElement, Id, ctx,
+							observations);
+				} else {
+					System.out.println("ERROR. TextQuestion type is not accounted for!!!!!");
+				}
+			} else {
+				System.out.println("Question NOT List or Text");
+				System.out.println("QUESTION.ID: " + questionElement.getAttribute("ID"));
+			}
 		}
 		return observations;
 	}
@@ -438,6 +474,47 @@ public class Interceptor {
 		NodeList listFieldElementList = questionElement.getElementsByTagName("ListField");
 		if (listFieldElementList.getLength() > 0) {
 			return true;
+		}
+		return false;
+	}
+	
+	public static boolean isQuestionATextQuestion(Element questionElement) {
+		NodeList responseFieldElementList = questionElement.getElementsByTagName("ResponseField");
+		if (responseFieldElementList.getLength() > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	public static void buildAndAddObservationForType(String type, Element textQuestionResponse, Element questionElement,
+			String Id, FhirContext ctx, ArrayList<Observation> observations) {
+		String response = getTextResponseForType(type, textQuestionResponse);
+		Observation observation = buildTextObservationResource(type, questionElement, response, Id, ctx);
+		observations.add(observation);
+	}
+
+	public static Element getTextQuestion(Element questionElement) {
+		Element textQuestionElement = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
+		return textQuestionElement;
+	}
+
+	public static Element getTextQuestionResponse(Element textQuestion) {
+		Element responseElement = (Element) textQuestion.getElementsByTagName("Response").item(0);
+		return responseElement;
+	}
+
+	public static String getTextResponseForType(String type, Element textQuestionResponse) {
+		Element integerElement = (Element) textQuestionResponse.getElementsByTagName(type).item(0);
+		return integerElement.getAttribute("val");
+	}
+
+	public static boolean isTextQuestionOfTypeAndHasResponse(String type, Element textQuestionResponse) {
+		NodeList dateTimeElementList = textQuestionResponse.getElementsByTagName(type);
+		if (dateTimeElementList.getLength() > 0) {
+			Element dateTimeElement = (Element) dateTimeElementList.item(0);
+			if (dateTimeElement.hasAttribute("val")) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -451,6 +528,37 @@ public class Interceptor {
 			}
 		}
 		return false;
+	}
+	
+	public static Observation buildTextObservationResource(String type, Element questionElement, String textResponse,
+			String id, FhirContext ctx) {
+
+		Observation observation = new Observation();
+		observation.setSubject(new Reference("Patient/6754"));
+		observation.addPerformer().setReference("Practitioner/pathpract1");
+		observation.addIdentifier().setSystem("https://CAP.org")
+				.setValue(id + "#" + questionElement.getAttribute("ID"));
+		observation.setStatus(ObservationStatus.FINAL);
+		observation.getCode().addCoding().setSystem("https://CAP.org").setCode(questionElement.getAttribute("ID"))
+				.setDisplay(questionElement.getAttribute("title"));
+		if (type == INTEGER) {
+			observation.setValue(new IntegerType(textResponse)).getValueIntegerType();
+		} else if (type == DECIMAL) {
+			observation.setValue(new Quantity(Double.parseDouble(textResponse))).getValueQuantity();
+		} else if (type == STRING) {
+			observation.setValue(new StringType(textResponse)).getValueStringType();
+		} else if (type == BOOLEAN) {
+			observation.setValue(new BooleanType(textResponse)).getValueBooleanType();
+		} else if (type == DATETIME) {
+			observation.setValue(new DateTimeType(textResponse)).getValueDateTimeType();
+		} else {
+			System.out.println("ERROR: BUILDING OBERVATION FOR UNSUPPORTED TYPE");
+		}
+		observation.addDerivedFrom().setReference("DocumentReference/" + id);
+		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
+		System.out.println(encoded);
+		System.out.println("*******************************************************************");
+		return observation;
 	}
 
 	public static Observation buildObservationResource(Element questionElement, Element listItemElement, String id,
