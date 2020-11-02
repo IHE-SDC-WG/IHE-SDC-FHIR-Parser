@@ -55,7 +55,6 @@ import org.hl7.fhir.r4.model.Base64BinaryType;
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -312,19 +311,11 @@ public class Interceptor {
 		BundleEntryComponent patient = new BundleEntryComponent();
 		patient.setFullUrl(patientUUID);
 		patient.setResource(createPatient(ctx));
-		BundleEntryRequestComponent patientRequest = new BundleEntryRequestComponent();
-		patientRequest.setMethod(HTTPVerb.PUT);
-		patientRequest.setUrl("Patient?identifier=urn:system|JoelAlexPatient");
-		patient.setRequest(patientRequest);
 		bundle.addEntry(patient);
 		//Add document reference resource
 		BundleEntryComponent docRef = new BundleEntryComponent();
 		docRef.setFullUrl(docRefUUID);
 		docRef.setResource(createDocReference(ctx, sdcForm, form ,patientUUID));
-		BundleEntryRequestComponent docRefRequest = new BundleEntryRequestComponent();
-		docRefRequest.setMethod(HTTPVerb.POST);
-		docRefRequest.setUrl("DocumentReference");
-		docRef.setRequest(docRefRequest);
 		bundle.addEntry(docRef);
 		//add observations
 		for(Observation obs: Observations) {
@@ -332,10 +323,6 @@ public class Interceptor {
 			obs.addDerivedFrom().setReference(docRefUUID);
 			BundleEntryComponent bec = new BundleEntryComponent();
 			bec.setFullUrl(getUUID());
-			BundleEntryRequestComponent berc = new BundleEntryRequestComponent();
-			berc.setMethod(HTTPVerb.POST);
-			berc.setUrl("Observation");
-			bec.setRequest(berc);
 			bec.setResource(obs);
 			bundle.addEntry(bec);
 		}
