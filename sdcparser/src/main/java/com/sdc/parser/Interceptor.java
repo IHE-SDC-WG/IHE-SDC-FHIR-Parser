@@ -55,16 +55,19 @@ import org.hl7.fhir.r4.model.Base64BinaryType;
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DocumentReference;
 import org.hl7.fhir.r4.model.DocumentReference.DocumentReferenceContentComponent;
 import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
 import org.hl7.fhir.r4.model.IntegerType;
+import org.hl7.fhir.r4.model.MessageHeader;
+import org.hl7.fhir.r4.model.MessageHeader.MessageSourceComponent;
 import org.hl7.fhir.r4.model.Narrative;
+import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Observation.ObservationStatus;
 import org.hl7.fhir.r4.model.Patient;
@@ -76,6 +79,8 @@ import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
 import org.hl7.fhir.r4.model.codesystems.ProvenanceAgentRole;
+import org.hl7.fhir.utilities.xhtml.XhtmlNode;
+import org.hl7.fhir.utilities.xhtml.NodeType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -295,24 +300,22 @@ public class Interceptor {
 		Bundle bundle = new Bundle();
 		String bundleUUID = getUUID();  
 		bundle.setId(bundleUUID);
-		bundle.setType(BundleType.TRANSACTION);
+		bundle.setType(BundleType.MESSAGE);
+		//Add message header
+		BundleEntryComponent messageHeader = new BundleEntryComponent();
+		String messageHeaderUUID = getUUID();
+		messageHeader.setFullUrl(messageHeaderUUID);
+		messageHeader.setResource(createMessageHeader(ctx));
+		bundle.addEntry(messageHeader);
 		//Add patient resource
 		BundleEntryComponent patient = new BundleEntryComponent();
 		patient.setFullUrl(patientUUID);
 		patient.setResource(createPatient(ctx));
-		BundleEntryRequestComponent patientRequest = new BundleEntryRequestComponent();
-		patientRequest.setMethod(HTTPVerb.PUT);
-		patientRequest.setUrl("Patient?identifier=urn:system|JoelAlexPatient");
-		patient.setRequest(patientRequest);
 		bundle.addEntry(patient);
 		//Add document reference resource
 		BundleEntryComponent docRef = new BundleEntryComponent();
 		docRef.setFullUrl(docRefUUID);
 		docRef.setResource(createDocReference(ctx, sdcForm, form ,patientUUID));
-		BundleEntryRequestComponent docRefRequest = new BundleEntryRequestComponent();
-		docRefRequest.setMethod(HTTPVerb.POST);
-		docRefRequest.setUrl("DocumentReference");
-		docRef.setRequest(docRefRequest);
 		bundle.addEntry(docRef);
 		//add observations
 		for(Observation obs: Observations) {
@@ -320,14 +323,24 @@ public class Interceptor {
 			obs.addDerivedFrom().setReference(docRefUUID);
 			BundleEntryComponent bec = new BundleEntryComponent();
 			bec.setFullUrl(getUUID());
-			BundleEntryRequestComponent berc = new BundleEntryRequestComponent();
-			berc.setMethod(HTTPVerb.POST);
-			berc.setUrl("Observation");
-			bec.setRequest(berc);
 			bec.setResource(obs);
 			bundle.addEntry(bec);
 		}
 		return bundle;
+	}
+	
+	public static MessageHeader createMessageHeader(FhirContext ctx) {
+		MessageHeader messageHeader = new MessageHeader();
+		Narrative messageHeaderNarrative = new Narrative();
+		messageHeaderNarrative.setStatus(NarrativeStatus.GENERATED);
+		XhtmlNode messageHeaderText = new XhtmlNode(NodeType.Element, "p");
+		messageHeaderText.addText("SDC example Transaction Bundle for fake patient Jose incoduing Patient, Encounter");
+		messageHeaderNarrative.setDiv(messageHeaderText);
+		messageHeader.setText(messageHeaderNarrative);
+		messageHeader.getEventCoding().setSystem("http://example.org/fhir/message-events").setCode("admin-notify");
+		messageHeader.setSource(new MessageSourceComponent().setName("IHE SDC on FHIR Parser").setEndpoint("http://localhost:8080/sdcparser"));
+		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(messageHeader);
+		return messageHeader;
 	}
 
 	public static Patient createPatient(FhirContext ctx) {
