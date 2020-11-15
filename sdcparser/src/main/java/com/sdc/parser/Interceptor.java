@@ -27,6 +27,7 @@ package com.sdc.parser;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.NumberFormatException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Timestamp;
@@ -45,7 +46,10 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -545,33 +549,41 @@ public class Interceptor {
 	
 	public static Observation buildTextObservationResource(String type, Element questionElement, String textResponse,
 			String id, FhirContext ctx) {
-
-		Observation observation = new Observation();
-		observation.setSubject(new Reference("Patient/6754"));
-		observation.addPerformer().setReference("Practitioner/pathpract1");
-		observation.addIdentifier().setSystem("https://CAP.org")
-				.setValue(id + "#" + questionElement.getAttribute("ID"));
-		observation.setStatus(ObservationStatus.FINAL);
-		observation.getCode().addCoding().setSystem("https://CAP.org").setCode(questionElement.getAttribute("ID"))
-				.setDisplay(questionElement.getAttribute("title"));
-		if (type == INTEGER) {
-			observation.setValue(new IntegerType(textResponse)).getValueIntegerType();
-		} else if (type == DECIMAL) {
-			observation.setValue(new Quantity(Double.parseDouble(textResponse))).getValueQuantity();
-		} else if (type == STRING) {
-			observation.setValue(new StringType(textResponse)).getValueStringType();
-		} else if (type == BOOLEAN) {
-			observation.setValue(new BooleanType(textResponse)).getValueBooleanType();
-		} else if (type == DATETIME) {
-			observation.setValue(new DateTimeType(textResponse)).getValueDateTimeType();
-		} else {
-			System.out.println("ERROR: BUILDING OBERVATION FOR UNSUPPORTED TYPE");
+		try {
+			Observation observation = new Observation();
+			observation.setSubject(new Reference("Patient/6754"));
+			observation.addPerformer().setReference("Practitioner/pathpract1");
+			observation.addIdentifier().setSystem("https://CAP.org")
+					.setValue(id + "#" + questionElement.getAttribute("ID"));
+			observation.setStatus(ObservationStatus.FINAL);
+			observation.getCode().addCoding().setSystem("https://CAP.org").setCode(questionElement.getAttribute("ID"))
+					.setDisplay(questionElement.getAttribute("title"));
+			if (type == INTEGER) {
+				observation.setValue(new IntegerType(Integer.parseInt(textResponse))).getValueIntegerType();
+			} else if (type == DECIMAL) {
+				observation.setValue(new Quantity(Double.parseDouble(textResponse))).getValueQuantity();
+			} else if (type == STRING) {
+				observation.setValue(new StringType(textResponse)).getValueStringType();
+			} else if (type == BOOLEAN) {
+				observation.setValue(new BooleanType(Boolean.parseBoolean(textResponse))).getValueBooleanType();
+			} else if (type == DATETIME) {
+				observation.setValue(new DateTimeType(textResponse)).getValueDateTimeType();
+			} else {
+				String notSupportedError = "ERROR: BUILDING OBERVATION FOR UNSUPPORTED TYPE";
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
+			}
+			observation.addDerivedFrom().setReference("DocumentReference/" + id);
+			String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
+			System.out.println(encoded);
+			System.out.println("*******************************************************************");
+			return observation;
+		} catch (NumberFormatException e){
+			String errorMessage = "Error 400 Bad Request (Number Format Exception): " 
+					+ e.getMessage()  
+					+ " is not of the correct type for question with ID " 
+					+ questionElement.getAttribute("ID");
+			throw new WebApplicationException(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_XHTML_XML).entity(errorMessage).build());
 		}
-		observation.addDerivedFrom().setReference("DocumentReference/" + id);
-		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-		System.out.println(encoded);
-		System.out.println("*******************************************************************");
-		return observation;
 	}
 
 	public static Observation buildObservationResource(Element questionElement, Element listItemElement, String id,
