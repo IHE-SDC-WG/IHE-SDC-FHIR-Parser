@@ -25,6 +25,9 @@ SOFTWARE.
 
 package com.sdc.parser;
 
+import static com.sdc.parser.Constants.*;
+import static com.sdc.parser.ParserHelper.*;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.NumberFormatException;
@@ -103,13 +106,6 @@ import ca.uhn.fhir.rest.client.interceptor.AdditionalRequestHeadersInterceptor;
 public class Interceptor {
 
 	FhirContext ctx;
-	String provenanceHeader = "{\"resourceType\": \"Provenance\",\"meta\": {\"versionId\": \"1\",\"lastUpdated\": \"2020-08-31T20:44:24.994+00:00\"},\"recorded\": \"2020-05-14T13:44:24.1703291-07:00\",\"agent\": [{\"type\": {\"text\": \"Joel and Alex testing\"}}]}";
-	final static String INTEGER = "integer";
-	final static String DECIMAL = "decimal";
-	final static String STRING = "string";
-	final static String BOOLEAN = "boolean";
-	final static String DATE = "date";
-	final static String DATETIME = "dateTime";
 
 	public Interceptor() {
 		this.ctx = FhirContext.forR4();
@@ -221,83 +217,6 @@ public class Interceptor {
 		// get the list of questions with selected = "true";
 		ArrayList<Observation> answeredQuestions = getSelectedTrueQuestions(questionList, Id, ctx);
 		return answeredQuestions;
-	}
-
-	/**
-	 * Method that gets the root Element - SDCPackage
-	 * 
-	 * @param document
-	 * @return
-	 */
-	public static Element getRootElement(Document document) {
-		Element root = document.getDocumentElement(); // SDCPackage
-		System.out.println("Root: " + root.getNodeName());
-		return root;
-	}
-
-	/**
-	 * Method that return the Body Element
-	 * 
-	 * @param document
-	 * @return
-	 */
-	public static Node getBodyElement(Document document) {
-		Node body = null;
-		Element root = getRootElement(document);
-		NodeList nList = document.getElementsByTagName("Body");
-		body = nList.item(0);
-		return body;
-	}
-
-	/**
-	 * Method that gets the Children of the Body element. There should be only 1
-	 * ChildItems
-	 * 
-	 * @param body
-	 * @return
-	 */
-	public static ArrayList<Node> getAllChildrenFromBody(Node body) {
-		NodeList children = body.getChildNodes();
-		return removeWhiteSpaces(children);
-	}
-
-	/**
-	 * Method that gets all the sections form the ChildItems under Body
-	 * 
-	 * @param childItems
-	 * @return
-	 */
-	public static NodeList getSectionsFromChildItems(Element childItems) {
-		NodeList nodeList = childItems.getElementsByTagName("Section");
-		return nodeList;
-	}
-
-	/**
-	 * Method that removes all the "# text" elements form the list
-	 * 
-	 * @param nodeList
-	 * @return
-	 */
-	public static ArrayList<Node> removeWhiteSpaces(NodeList nodeList) {
-		ArrayList<Node> returnList = new ArrayList<Node>();
-		for (int i = 0; i < nodeList.getLength(); i++) {
-			Node node = nodeList.item(i);
-			if (Node.ELEMENT_NODE == node.getNodeType()) {
-				returnList.add(node);
-			}
-		}
-
-		return returnList;
-	}
-
-	public static NodeList getAllQuestionNodes(Element childItems) {
-		NodeList questionList = childItems.getElementsByTagName("Question");
-		return questionList;
-	}
-
-	public static void printQuestionName(ArrayList<Node> questionList) {
-		for (int i = 0; i < questionList.size(); i++) {
-		}
 	}
 	
 	public static Bundle createBundle(ArrayList<Observation> Observations, FhirContext ctx, String sdcForm, Document form, String patientUUID, String docRefUUID) {
@@ -487,64 +406,11 @@ public class Interceptor {
 		return observations;
 	}
 	
-	public static boolean isQuestionAListQuestion(Element questionElement) {
-		NodeList listFieldElementList = questionElement.getElementsByTagName("ListField");
-		if (listFieldElementList.getLength() > 0) {
-			return true;
-		}
-		return false;
-	}
-	
-	public static boolean isQuestionATextQuestion(Element questionElement) {
-		NodeList responseFieldElementList = questionElement.getElementsByTagName("ResponseField");
-		if (responseFieldElementList.getLength() > 0) {
-			return true;
-		}
-		return false;
-	}
-	
 	public static void buildAndAddObservationForType(String type, Element textQuestionResponse, Element questionElement,
 			String Id, FhirContext ctx, ArrayList<Observation> observations) {
 		String response = getTextResponseForType(type, textQuestionResponse);
 		Observation observation = buildTextObservationResource(type, questionElement, response, Id, ctx);
 		observations.add(observation);
-	}
-
-	public static Element getTextQuestion(Element questionElement) {
-		Element textQuestionElement = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
-		return textQuestionElement;
-	}
-
-	public static Element getTextQuestionResponse(Element textQuestion) {
-		Element responseElement = (Element) textQuestion.getElementsByTagName("Response").item(0);
-		return responseElement;
-	}
-
-	public static String getTextResponseForType(String type, Element textQuestionResponse) {
-		Element integerElement = (Element) textQuestionResponse.getElementsByTagName(type).item(0);
-		return integerElement.getAttribute("val");
-	}
-
-	public static boolean isTextQuestionOfTypeAndHasResponse(String type, Element textQuestionResponse) {
-		NodeList dateTimeElementList = textQuestionResponse.getElementsByTagName(type);
-		if (dateTimeElementList.getLength() > 0) {
-			Element dateTimeElement = (Element) dateTimeElementList.item(0);
-			if (dateTimeElement.hasAttribute("val")) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public static boolean getListFieldEelementToCheckForMultiSelect(Element questionElement) {
-		NodeList listFieldElementList = questionElement.getElementsByTagName("ListField");
-		if (listFieldElementList.getLength() > 0) {
-			Element listFieldElement = (Element) listFieldElementList.item(0);
-			if (listFieldElement.hasAttribute("maxSelections")) {
-				return true;
-			}
-		}
-		return false;
 	}
 	
 	public static Observation buildTextObservationResource(String type, Element questionElement, String textResponse,
@@ -626,37 +492,6 @@ public class Interceptor {
 		}
 
 		return observation;
-	}
-	
-	/**
-	 * Generated a Globally Unique Identifier
-	 * @return
-	 */
-	public static String getUUID() {
-		String uuid = "urn:uuid:" + String.valueOf(UUID.randomUUID());
-		return uuid;
-	}
-	
-	/*
-	 * Produces the current time stamp of the instant that it is called
-	 */
-	public static String getTimeStamp() {
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-		Instant instant = timestamp.toInstant();
-		return instant.toString();
-	}
-
-	/**
-	 * Method that get the formInstranceVrsionURI and ID
-	 * 
-	 * @param document
-	 * @return
-	 */
-	public static String getFormID(Document document) {
-		Element root = getRootElement(document);
-		NodeList nodeList = root.getElementsByTagName("FormDesign");
-		Element formDesignNode = (Element) nodeList.item(0);
-		return formDesignNode.getAttribute("ID") + formDesignNode.getAttribute("formInstanceVersionURI");
 	}
 
 }
