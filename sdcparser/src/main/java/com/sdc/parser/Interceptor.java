@@ -22,25 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-
 package com.sdc.parser;
 
 import static com.sdc.parser.Constants.*;
 import static com.sdc.parser.ParserHelper.*;
+import static com.sdc.parser.BundleHelper.*;
+import static com.sdc.parser.FormParser.*;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.NumberFormatException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
@@ -49,53 +42,16 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.hl7.fhir.r4.model.Attachment;
-import org.hl7.fhir.r4.model.Base64BinaryType;
-import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.Bundle.BundleType;
-import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
-import org.hl7.fhir.r4.model.CodeableConcept;
-import org.hl7.fhir.r4.model.Coding;
-import org.hl7.fhir.r4.model.DateTimeType;
-import org.hl7.fhir.r4.model.DocumentReference;
-import org.hl7.fhir.r4.model.DocumentReference.DocumentReferenceContentComponent;
-import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
-import org.hl7.fhir.r4.model.IntegerType;
-import org.hl7.fhir.r4.model.MessageHeader;
-import org.hl7.fhir.r4.model.MessageHeader.MessageSourceComponent;
-import org.hl7.fhir.r4.model.Narrative;
-import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.Observation;
-import org.hl7.fhir.r4.model.Observation.ObservationStatus;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Practitioner;
-import org.hl7.fhir.r4.model.Provenance;
-import org.hl7.fhir.r4.model.Provenance.ProvenanceAgentComponent;
-import org.hl7.fhir.r4.model.Quantity;
-import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.StringType;
-import org.hl7.fhir.r4.model.Type;
-import org.hl7.fhir.r4.model.codesystems.ProvenanceAgentRole;
-import org.hl7.fhir.utilities.xhtml.XhtmlNode;
-import org.hl7.fhir.utilities.xhtml.NodeType;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import com.google.common.base.Charsets;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
@@ -114,18 +70,15 @@ public class Interceptor {
 	@GET
 	@Produces(MediaType.TEXT_HTML)
 	public String sayHello() {
-		return "<h1>Welcome to Canada Health Infoway's SDC Parser Service</h1>"
-				+ "<p></p><h3> Optional Paremeters: server = [FHIR Server endpoint the resources will be posted to]</h3>" +
-				"<h3>Ex: /sdcparser?server=http://test.fhir.org/r4</h3>" + 
-				"<p></p><h3> Optional Paremeters: format = json/xml </h3>" +
-				"<h3>Ex: /sdcparser?server=http://test.fhir.org/r4&format=json</h3>";
+		return LANDING_MESSAGE;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_XML)
 	@Produces(MediaType.APPLICATION_XML)
-	public String loadXMLFromString(String sdcForm, @QueryParam("server") String server, @QueryParam("format") String format) {
-		if(format == null || format.isEmpty() || format.equals("")) {
+	public String loadXMLFromString(String sdcForm, @QueryParam("server") String server,
+			@QueryParam("format") String format) {
+		if (format == null || format.isEmpty() || format.equals("")) {
 			format = "xml";
 		}
 		StringBuilder stringbuilder = new StringBuilder();
@@ -141,23 +94,21 @@ public class Interceptor {
 			} catch (MalformedURLException mfe) {
 				return "There is something wrong with the URL of the server!!!!!";
 			}
-			String provenanceHeader = "{\"resourceType\": \"Provenance\",\"meta\": {\"versionId\": \"1\",\"lastUpdated\": \"TIME_STAMP\"},\"recorded\": \"TIME_STAMP\",\"agent\": [{\"type\": {\"text\": \"Joel and Alex testing\"}}]}";
+			String provenanceHeader = PROVENANCE_HEADER;
 			provenanceHeader = provenanceHeader.replaceAll(Pattern.quote("TIME_STAMP"), getTimeStamp());
 			AdditionalRequestHeadersInterceptor interceptor = new AdditionalRequestHeadersInterceptor();
-			if(format.equalsIgnoreCase("xml")){
+			if (format.equalsIgnoreCase("xml")) {
 				interceptor.addHeaderValue("Content-Type", "application/fhir+xml");
-			}
-			else if(format.equalsIgnoreCase("json")) {
+			} else if (format.equalsIgnoreCase("json")) {
 				interceptor.addHeaderValue("Content-Type", "application/fhir+json");
-			}
-			else {
+			} else {
 				interceptor.addHeaderValue("Content-Type", "application/fhir+xml");
 			}
 			interceptor.addHeaderValue("X-Provenance", provenanceHeader);
 			client = ctx.newRestfulGenericClient(url.toString());
 			ctx.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
-			//client.registerInterceptor(interceptor);
-			
+			// client.registerInterceptor(interceptor);
+
 		}
 
 		try {
@@ -166,27 +117,25 @@ public class Interceptor {
 			InputSource is = new InputSource(new StringReader(sdcForm));
 			Document document = builder.parse(is);
 			ArrayList<Observation> observations = parseSDCForm(document, ctx);
-			//create bundle
-			String patientUUID = getUUID(); 
+			// create bundle
+			String patientUUID = getUUID();
 			String docRefUUID = getUUID();
-			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, docRefUUID);
+			String messageHeaderUUID = getUUID();
+			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, docRefUUID, messageHeaderUUID);
 			String encoded = null;
-			if(format.equalsIgnoreCase("xml")) {
-				encoded  = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);
-			}
-			else {
+			if (format.equalsIgnoreCase("xml")) {
+				encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);
+			} else {
 				encoded = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(bundle);
 			}
-					
-			if(noServer) {
+
+			if (noServer) {
 				stringbuilder.append(encoded);
-			}
-			else {
+			} else {
 				Bundle resp = client.transaction().withBundle(bundle).execute();
-				if(format.equalsIgnoreCase("json")) {
+				if (format.equalsIgnoreCase("json")) {
 					stringbuilder.append(ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(resp));
-				}
-				else {
+				} else {
 					stringbuilder.append(ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(resp));
 				}
 			}
@@ -198,300 +147,6 @@ public class Interceptor {
 			return e.getMessage();
 		}
 		return stringbuilder.toString();
-	}
-
-	public static ArrayList<Observation> parseSDCForm(Document document, FhirContext ctx) {
-
-		// get forminstanceVersion and ID
-		String Id = getFormID(document);
-		System.out.println("Form ID: " + Id);
-		// get Body node
-		Node body = getBodyElement(document);
-		// get all the children of the body node
-		ArrayList<Node> childrenOfBody = getAllChildrenFromBody(body);
-		System.out.println("# of children in Body: " + childrenOfBody.size());
-		// there should be only 1 child in the body - "ChildItems"
-		Element childItems = (Element) childrenOfBody.get(0);
-		NodeList questionList = getAllQuestionNodes(childItems);
-		System.out.println("# of questions: " + questionList.getLength());
-		// get the list of questions with selected = "true";
-		ArrayList<Observation> answeredQuestions = getSelectedTrueQuestions(questionList, Id, ctx);
-		return answeredQuestions;
-	}
-	
-	public static Bundle createBundle(ArrayList<Observation> Observations, FhirContext ctx, String sdcForm, Document form, String patientUUID, String docRefUUID) {
-		Bundle bundle = new Bundle();
-		String bundleUUID = getUUID();  
-		bundle.setId(bundleUUID);
-		bundle.setType(BundleType.MESSAGE);
-		//Add message header
-		BundleEntryComponent messageHeader = new BundleEntryComponent();
-		String messageHeaderUUID = getUUID();
-		messageHeader.setFullUrl(messageHeaderUUID);
-		messageHeader.setResource(createMessageHeader(ctx));
-		bundle.addEntry(messageHeader);
-		//Add patient resource
-		BundleEntryComponent patient = new BundleEntryComponent();
-		patient.setFullUrl(patientUUID);
-		patient.setResource(createPatient(ctx));
-		bundle.addEntry(patient);
-		//Add document reference resource
-		BundleEntryComponent docRef = new BundleEntryComponent();
-		docRef.setFullUrl(docRefUUID);
-		docRef.setResource(createDocReference(ctx, sdcForm, form ,patientUUID));
-		bundle.addEntry(docRef);
-		//add observations
-		for(Observation obs: Observations) {
-			obs.setSubject(new Reference( patientUUID ));
-			obs.addDerivedFrom().setReference(docRefUUID);
-			BundleEntryComponent bec = new BundleEntryComponent();
-			bec.setFullUrl(getUUID());
-			bec.setResource(obs);
-			bundle.addEntry(bec);
-		}
-		return bundle;
-	}
-	
-	public static MessageHeader createMessageHeader(FhirContext ctx) {
-		MessageHeader messageHeader = new MessageHeader();
-		Narrative messageHeaderNarrative = new Narrative();
-		messageHeaderNarrative.setStatus(NarrativeStatus.GENERATED);
-		XhtmlNode messageHeaderText = new XhtmlNode(NodeType.Element, "p");
-		messageHeaderText.addText("SDC example Transaction Bundle for fake patient Jose incoduing Patient, Encounter");
-		messageHeaderNarrative.setDiv(messageHeaderText);
-		messageHeader.setText(messageHeaderNarrative);
-		messageHeader.getEventCoding().setSystem("http://example.org/fhir/message-events").setCode("admin-notify");
-		messageHeader.setSource(new MessageSourceComponent().setName("IHE SDC on FHIR Parser").setEndpoint("http://localhost:8080/sdcparser"));
-		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(messageHeader);
-		return messageHeader;
-	}
-
-	public static Patient createPatient(FhirContext ctx) {
-		Patient patient = new Patient();
-		patient.addIdentifier().setSystem("urn:system").setValue("JoelAlexPatient");
-		patient.addName().setFamily("Rodriguez").addGiven("Jose");
-		patient.setGender(org.hl7.fhir.r4.model.Enumerations.AdministrativeGender.MALE);
-		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
-		return patient;
-	}
-	public static Practitioner createPractitioner(FhirContext ctx) {
-		Practitioner pract = new Practitioner();
-		pract.addName().setFamily("Bit").addGiven("Rex");
-		pract.addIdentifier().setSystem("http://someIdentifier.com").setValue("pathpract1");
-		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(pract);
-		return pract;
-	}
-	public static Provenance createProvenance(FhirContext ctx, String bundleUUID) {
-		DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-		Date dateobj = new Date();
-		Provenance provenance = new Provenance();
-		provenance.setRecorded(dateobj);
-		Type type = new DateTimeType();
-		provenance.setOccurred(type);
-		provenance.getTargetFirstRep().setReference("Bundle/" + bundleUUID);
-		ProvenanceAgentComponent pac = new ProvenanceAgentComponent();
-		pac.getRoleFirstRep().getCodingFirstRep().setCode(ProvenanceAgentRole.ASSEMBLER.toString())
-		.setDisplay(ProvenanceAgentRole.ASSEMBLER.getDisplay()).setSystem("http://terminology.hl7.org/CodeSystem/provenance-participant-type");
-		provenance.addAgent(pac);
-		return provenance;
-	}
-	public static DocumentReference createDocReference(FhirContext ctx, String sdcForm, Document form,  String patientUUID) {
-		DocumentReference docRef = new DocumentReference();
-		Narrative narry = new Narrative();
-		narry.setDivAsString("This DocumentReference was created by the Infoway Parser for form " + getFormID(form));
-		docRef.setStatus(DocumentReferenceStatus.CURRENT);
-		docRef.setText(narry);
-		docRef.getMasterIdentifier().setSystem("https://cap.org").setValue(getFormID(form));
-		docRef.setSubject(new Reference(patientUUID));
-		docRef.setDate(new Date());
-		DocumentReferenceContentComponent drcc = new DocumentReferenceContentComponent();
-		Attachment attachment = new Attachment();
-		attachment.setContentType("text/plain");
-		attachment.setDataElement(new Base64BinaryType(sdcForm.getBytes()));
-		drcc.setAttachment(attachment);
-		docRef.addContent(drcc);
-		return docRef;
-	}
-	/**
-	 * This will traverse through the list of selected questions
-	 * 
-	 * @param questionList
-	 * @param Id
-	 * @param ctx
-	 * @return
-	 */
-	public static ArrayList<Observation> getSelectedTrueQuestions(NodeList questionList, String Id, FhirContext ctx) {
-
-		ArrayList<Observation> observations = new ArrayList<Observation>();
-		Observation observation = null;
-		for (int i = 0; i < questionList.getLength(); i++) {
-			Element questionElement = (Element) questionList.item(i);
-			String questionID = questionElement.getAttribute("ID");
-			// get the listFieldElement
-			boolean isListQuestion = isQuestionAListQuestion(questionElement);
-			boolean isTextQuestion = isQuestionATextQuestion(questionElement);
-			if (isListQuestion) {
-				boolean isMultiSelect = getListFieldEelementToCheckForMultiSelect(questionElement);
-				// get the ListItems under this question where selected = true
-				NodeList listItemList = questionElement.getElementsByTagName("ListItem");
-				if (!isMultiSelect) {
-					for (int j = 0; j < listItemList.getLength(); j++) {
-						Element listItemElement = (Element) listItemList.item(j);
-						if (listItemElement.hasAttribute("selected")) {
-							Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode()
-									.getParentNode();
-							if (parentQuestion.getAttribute("ID").equals(questionElement.getAttribute("ID"))) {
-								System.out.println("QUESTION.ID: " + questionElement.getAttribute("ID"));
-								System.out.println("LISTITEM.ID: " + listItemElement.getAttribute("ID"));
-								System.out.println("LISTITEM.TITLE: " + listItemElement.getAttribute("title"));
-								System.out.println("*******************************************************************");
-								observation = buildObservationResource(questionElement, listItemElement, Id, ctx);
-								observations.add(observation);
-							}
-
-						}
-					}
-				} else {
-
-					ArrayList<Element> listElementsAnswered = new ArrayList<Element>();
-					// check if there are any selected answers before hand!
-					for (int j = 0; j < listItemList.getLength(); j++) {
-						Element listItemElement = (Element) listItemList.item(j);
-						if (listItemElement.hasAttribute("selected")) {
-							Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode()
-									.getParentNode();
-							if (parentQuestion.getAttribute("ID").equals(questionID)) {
-								listElementsAnswered.add(listItemElement);
-							}
-						}
-					}
-
-					// Now if there are selected answers then only add them as components
-					if (!listElementsAnswered.isEmpty()) {
-						observation = buildMultiSelectObservationResource(questionElement, Id, ctx);
-						observations.add(observation);
-						addComponentToObservation(observation, listElementsAnswered);
-						String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-						System.out.println(encoded);
-						System.out.println("*******************************************************************");
-					}
-				}
-			} else if (isTextQuestion) {
-				Element textQuestion = getTextQuestion(questionElement);
-				Element textQuestionResponse = getTextQuestionResponse(textQuestion);
-				if (isTextQuestionOfTypeAndHasResponse(INTEGER, textQuestionResponse)) {
-					buildAndAddObservationForType(INTEGER, textQuestionResponse, questionElement, Id, ctx,
-							observations);
-				} else if (isTextQuestionOfTypeAndHasResponse(DECIMAL, textQuestionResponse)) {
-					buildAndAddObservationForType(DECIMAL, textQuestionResponse, questionElement, Id, ctx,
-							observations);
-				} else if (isTextQuestionOfTypeAndHasResponse(STRING, textQuestionResponse)) {
-					buildAndAddObservationForType(STRING, textQuestionResponse, questionElement, Id, ctx, observations);
-				} else if (isTextQuestionOfTypeAndHasResponse(BOOLEAN, textQuestionResponse)) {
-					buildAndAddObservationForType(BOOLEAN, textQuestionResponse, questionElement, Id, ctx,
-							observations);
-				} else if (isTextQuestionOfTypeAndHasResponse(DATE, textQuestionResponse)) {
-					System.out.println("Question is date");
-				} else if (isTextQuestionOfTypeAndHasResponse(DATETIME, textQuestionResponse)) {
-					buildAndAddObservationForType(DATETIME, textQuestionResponse, questionElement, Id, ctx,
-							observations);
-				} else {
-					System.out.println("ERROR. TextQuestion type is not accounted for!!!!!");
-				}
-			} else {
-				System.out.println("Question NOT List or Text");
-				System.out.println("QUESTION.ID: " + questionElement.getAttribute("ID"));
-			}
-		}
-		return observations;
-	}
-	
-	public static void buildAndAddObservationForType(String type, Element textQuestionResponse, Element questionElement,
-			String Id, FhirContext ctx, ArrayList<Observation> observations) {
-		String response = getTextResponseForType(type, textQuestionResponse);
-		Observation observation = buildTextObservationResource(type, questionElement, response, Id, ctx);
-		observations.add(observation);
-	}
-	
-	public static Observation buildTextObservationResource(String type, Element questionElement, String textResponse,
-			String id, FhirContext ctx) {
-		try {
-			Observation observation = new Observation();
-			observation.setSubject(new Reference("Patient/6754"));
-			observation.addPerformer().setReference("Practitioner/pathpract1");
-			observation.addIdentifier().setSystem("https://CAP.org")
-					.setValue(id + "#" + questionElement.getAttribute("ID"));
-			observation.setStatus(ObservationStatus.FINAL);
-			observation.getCode().addCoding().setSystem("https://CAP.org").setCode(questionElement.getAttribute("ID"))
-					.setDisplay(questionElement.getAttribute("title"));
-			if (type == INTEGER) {
-				observation.setValue(new IntegerType(Integer.parseInt(textResponse))).getValueIntegerType();
-			} else if (type == DECIMAL) {
-				observation.setValue(new Quantity(Double.parseDouble(textResponse))).getValueQuantity();
-			} else if (type == STRING) {
-				observation.setValue(new StringType(textResponse)).getValueStringType();
-			} else if (type == BOOLEAN) {
-				observation.setValue(new BooleanType(Boolean.parseBoolean(textResponse))).getValueBooleanType();
-			} else if (type == DATETIME) {
-				observation.setValue(new DateTimeType(textResponse)).getValueDateTimeType();
-			} else {
-				String notSupportedError = "ERROR: BUILDING OBERVATION FOR UNSUPPORTED TYPE";
-				throw new WebApplicationException(Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
-			}
-			observation.addDerivedFrom().setReference("DocumentReference/" + id);
-			String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-			System.out.println(encoded);
-			System.out.println("*******************************************************************");
-			return observation;
-		} catch (NumberFormatException e){
-			String errorMessage = "Error 400 Bad Request (Number Format Exception): " 
-					+ e.getMessage()  
-					+ " is not of the correct type for question with ID " 
-					+ questionElement.getAttribute("ID");
-			throw new WebApplicationException(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_XHTML_XML).entity(errorMessage).build());
-		}
-	}
-
-	public static Observation buildObservationResource(Element questionElement, Element listItemElement, String id,
-			FhirContext ctx) {
-
-		Observation observation = new Observation();
-		//observation.setSubject(new Reference("Patient/6754"));
-		observation.addIdentifier().setSystem("https://CAP.org")
-				.setValue(id + "#" + questionElement.getAttribute("ID"));
-		observation.setStatus(ObservationStatus.FINAL);
-		observation.getCode().addCoding().setSystem("https://CAP.org").setCode(questionElement.getAttribute("ID"))
-				.setDisplay(questionElement.getAttribute("title"));
-		observation.setValue(new CodeableConcept()).getValueCodeableConcept().addCoding().setSystem("https://CAP.org")
-				.setCode(listItemElement.getAttribute("ID")).setDisplay(listItemElement.getAttribute("title"));
-		//observation.addDerivedFrom().setReference("DocumentReference/" + id);
-		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-		return observation;
-
-	}
-
-	public static Observation buildMultiSelectObservationResource(Element questionElement, String id, FhirContext ctx) {
-		Observation observation = new Observation();
-		//observation.setSubject(new Reference("Patient/6754"));
-		observation.addIdentifier().setSystem("https://CAP.org")
-				.setValue(id + "." + questionElement.getAttribute("ID"));
-		observation.setStatus(ObservationStatus.FINAL);
-		observation.getCode().addCoding().setSystem("https://CAP.org").setCode(questionElement.getAttribute("ID"))
-				.setDisplay(questionElement.getAttribute("title"));
-		//observation.addDerivedFrom().setReference("DocumentReference/" + id);
-		return observation;
-	}
-
-	public static Observation addComponentToObservation(Observation observation,
-			ArrayList<Element> listElementsAnswered) {
-
-		for (Element element : listElementsAnswered) {
-
-			observation.addComponent().getCode().addCoding().setSystem("https://CAP.org")
-					.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
-		}
-
-		return observation;
 	}
 
 }
