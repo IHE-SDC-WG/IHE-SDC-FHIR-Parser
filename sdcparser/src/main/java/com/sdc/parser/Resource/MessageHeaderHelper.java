@@ -1,7 +1,7 @@
-package com.sdc.parser;
+package com.sdc.parser.Resource;
 
-import static com.sdc.parser.Constants.EVENT_CODING_SYSTEM_NAME;
-import static com.sdc.parser.Constants.MESSAGE_HEADER_TEXT;
+import static com.sdc.parser.Constants.Constants.EVENT_CODING_SYSTEM_NAME;
+import static com.sdc.parser.Constants.Constants.MESSAGE_HEADER_TEXT;
 
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.Narrative;

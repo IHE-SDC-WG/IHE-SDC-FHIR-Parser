@@ -1,6 +1,9 @@
-package com.sdc.parser;
+package com.sdc.parser.Bundle;
 
 import static com.sdc.parser.ParserHelper.getUUID;
+import static com.sdc.parser.Resource.DocReferenceHelper.createDocReference;
+import static com.sdc.parser.Resource.MessageHeaderHelper.createMessageHeader;
+import static com.sdc.parser.Resource.PatientHelper.*;
 
 import java.util.ArrayList;
 
@@ -11,10 +14,6 @@ import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.w3c.dom.Document;
-
-import static com.sdc.parser.MessageHeaderHelper.createMessageHeader;
-import static com.sdc.parser.PatientHelper.*;
-import static com.sdc.parser.DocReferenceHelper.createDocReference;
 
 import ca.uhn.fhir.context.FhirContext;
 

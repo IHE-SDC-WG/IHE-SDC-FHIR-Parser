@@ -1,4 +1,4 @@
-package com.sdc.parser;
+package com.sdc.parser.Resource;
 
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Practitioner;

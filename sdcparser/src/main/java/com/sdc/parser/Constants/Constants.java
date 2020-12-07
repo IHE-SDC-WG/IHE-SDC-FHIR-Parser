@@ -1,4 +1,4 @@
-package com.sdc.parser;
+package com.sdc.parser.Constants;
 
 public final class Constants {
 	private Constants() {

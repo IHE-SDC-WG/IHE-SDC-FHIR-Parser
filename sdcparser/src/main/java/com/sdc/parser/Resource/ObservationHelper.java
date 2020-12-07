@@ -1,11 +1,11 @@
-package com.sdc.parser;
+package com.sdc.parser.Resource;
 
-import static com.sdc.parser.Constants.BOOLEAN;
-import static com.sdc.parser.Constants.DATETIME;
-import static com.sdc.parser.Constants.DECIMAL;
-import static com.sdc.parser.Constants.INTEGER;
-import static com.sdc.parser.Constants.STRING;
-import static com.sdc.parser.Constants.SYSTEM_NAME;
+import static com.sdc.parser.Constants.Constants.BOOLEAN;
+import static com.sdc.parser.Constants.Constants.DATETIME;
+import static com.sdc.parser.Constants.Constants.DECIMAL;
+import static com.sdc.parser.Constants.Constants.INTEGER;
+import static com.sdc.parser.Constants.Constants.STRING;
+import static com.sdc.parser.Constants.Constants.SYSTEM_NAME;
 import static com.sdc.parser.ParserHelper.getTextResponseForType;
 
 import java.util.ArrayList;

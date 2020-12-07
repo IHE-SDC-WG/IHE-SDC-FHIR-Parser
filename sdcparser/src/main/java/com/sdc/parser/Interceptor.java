@@ -24,10 +24,10 @@ SOFTWARE.
 
 package com.sdc.parser;
 
-import static com.sdc.parser.Constants.*;
-import static com.sdc.parser.ParserHelper.*;
-import static com.sdc.parser.BundleHelper.*;
+import static com.sdc.parser.Bundle.BundleHelper.*;
+import static com.sdc.parser.Constants.Constants.*;
 import static com.sdc.parser.FormParser.*;
+import static com.sdc.parser.ParserHelper.*;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -121,7 +121,8 @@ public class Interceptor {
 			String patientUUID = getUUID();
 			String docRefUUID = getUUID();
 			String messageHeaderUUID = getUUID();
-			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, docRefUUID, messageHeaderUUID);
+			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, docRefUUID,
+					messageHeaderUUID);
 			String encoded = null;
 			if (format.equalsIgnoreCase("xml")) {
 				encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);

@@ -1,6 +1,6 @@
-package com.sdc.parser;
+package com.sdc.parser.Resource;
 
-import static com.sdc.parser.Constants.PROVENANCE_SYSTEM_NAME;
+import static com.sdc.parser.Constants.Constants.PROVENANCE_SYSTEM_NAME;
 
 import java.util.Date;
 

@@ -1,6 +1,6 @@
-package com.sdc.parser;
+package com.sdc.parser.Resource;
 
-import static com.sdc.parser.Constants.SYSTEM_NAME;
+import static com.sdc.parser.Constants.Constants.SYSTEM_NAME;
 import static com.sdc.parser.ParserHelper.getFormID;
 
 import java.util.Date;

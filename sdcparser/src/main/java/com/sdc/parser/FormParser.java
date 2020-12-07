@@ -1,14 +1,14 @@
 package com.sdc.parser;
 
-import static com.sdc.parser.Constants.BOOLEAN;
-import static com.sdc.parser.Constants.DATE;
-import static com.sdc.parser.Constants.DATETIME;
-import static com.sdc.parser.Constants.DECIMAL;
-import static com.sdc.parser.Constants.INTEGER;
-import static com.sdc.parser.Constants.STRING;
-import static com.sdc.parser.Constants.TEXT_PARSING_ERROR_MSG;
+import static com.sdc.parser.Constants.Constants.BOOLEAN;
+import static com.sdc.parser.Constants.Constants.DATE;
+import static com.sdc.parser.Constants.Constants.DATETIME;
+import static com.sdc.parser.Constants.Constants.DECIMAL;
+import static com.sdc.parser.Constants.Constants.INTEGER;
+import static com.sdc.parser.Constants.Constants.STRING;
+import static com.sdc.parser.Constants.Constants.TEXT_PARSING_ERROR_MSG;
 import static com.sdc.parser.ParserHelper.*;
-import static com.sdc.parser.ObservationHelper.*;
+import static com.sdc.parser.Resource.ObservationHelper.*;
 
 import java.util.ArrayList;
 
@@ -39,8 +39,7 @@ public class FormParser {
 		ArrayList<Observation> answeredQuestions = getSelectedTrueQuestions(questionList, Id, ctx);
 		return answeredQuestions;
 	}
-	
-	
+
 	/**
 	 * This will traverse through the list of selected questions
 	 * 
@@ -135,6 +134,5 @@ public class FormParser {
 		}
 		return observations;
 	}
-	
-	
+
 }
