@@ -52,6 +52,19 @@ public class ParserHelper {
 		Element formDesignNode = (Element) nodeList.item(0);
 		return formDesignNode.getAttribute("ID") + formDesignNode.getAttribute("formInstanceVersionURI");
 	}
+	
+	/**
+	 * Method that get the form title
+	 * 
+	 * @param document
+	 * @return the form's title as String
+	 */
+	public static String getFormTitle(Document document) {
+		Element root = getRootElement(document);
+		NodeList nodeList = root.getElementsByTagName("FormDesign");
+		Element formDesignNode = (Element) nodeList.item(0);
+		return formDesignNode.getAttribute("formTitle");
+	}
 
 	/**
 	 * Method that gets the Children of the Body element. There should be only 1
