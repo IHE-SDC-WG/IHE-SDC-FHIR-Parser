@@ -9,13 +9,20 @@ public class Section {
 	protected String sectionName;
 	protected List<Section> subSections;
 	protected List<Question> questions;
+	private Element sectionElement; // the XML of the form. A section element contains a sectionProperties element
+									// and a childItems element
 	protected Element sectionProperties;
 	protected Element childItems;
 
+	/* base constructor to initialize the Lists */
 	public Section() {
 		this.initSubSections();
 	}
 
+	/*
+	 * constructors to create Sections from parsed information (if parse within this
+	 * class is not desired)
+	 */
 	public Section(String sectionName) {
 		this();
 		this.setSectionName(sectionName);
@@ -31,10 +38,20 @@ public class Section {
 		this.setChildItems(childItems);
 	}
 
+	/* should set the sectionElement and parse the element into a Section */
+	public Section(Element sectionElement) {
+		this();
+		this.sectionElement = sectionElement;
+
+		/* Parse section here */
+	}
+
+	/* Initializers for the Lists below */
 	protected void initSubSections() {
 		this.subSections = new ArrayList<Section>();
 	}
 
+	/* getters and setters below */
 	public String getSectionName() {
 		return this.sectionName;
 	}
@@ -81,5 +98,9 @@ public class Section {
 
 	public void setChildItems(Element childItems) {
 		this.childItems = childItems;
+	}
+
+	public Element getSectionElement() {
+		return this.sectionElement;
 	}
 }

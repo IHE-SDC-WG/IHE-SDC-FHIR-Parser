@@ -2,11 +2,18 @@ package com.sdc.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.sdc.parser.Section;;
 
 public class Form {
 
-	protected List<Element> formProperties;
+	private Document formDocument; // the XML of the form
+	protected List<Element> formProperties; // the properties elements of the form
+
+	// Attributes within FromDesign element
 	protected String title;
 	protected String ID;
 	protected String version;
@@ -14,11 +21,21 @@ public class Form {
 	protected String baseURI;
 	protected String fullURI;
 	protected String fileName;
+	protected List<Section> formSections; // sections in the form
+	protected List<Question> formQuestions; // form can have questions outside of sections
+	protected List<DisplayedItem> formDisplayedItems; // display items of form
 
+	/* base constructor to initialize the Lists */
 	public Form() {
 		this.initFormProperties();
+		this.initFormQuestions();
+		this.initFormDisplayedItems();
 	}
 
+	/*
+	 * constructors to create Forms from parsed information (if parse within this
+	 * class is not desired)
+	 */
 	public Form(String title) {
 		this();
 		this.setTitle(title);
@@ -39,10 +56,29 @@ public class Form {
 		this.addFormProperties(formProperties);
 	}
 
+	/* should set the formDocument and parse the document into a From */
+	public Form(Document document) {
+		this();
+		this.setFormDocument(document);
+
+		/* parse form here */
+		/* look at FormParser.parseSDCForm for parsing */
+	}
+
+	/* Initializers for the Lists below */
 	protected void initFormProperties() {
 		this.formProperties = new ArrayList<Element>();
 	}
 
+	protected void initFormQuestions() {
+		this.formQuestions = new ArrayList<Question>();
+	}
+
+	protected void initFormDisplayedItems() {
+		this.formDisplayedItems = new ArrayList<DisplayedItem>();
+	}
+
+	/* getters and setters below */
 	public List<Element> getFormProperties() {
 		return this.formProperties;
 	}
@@ -53,6 +89,42 @@ public class Form {
 
 	public void addFormProperties(List<Element> formProperties) {
 		this.formProperties.addAll(formProperties);
+	}
+
+	public List<Section> getFormSections() {
+		return this.formSections;
+	}
+
+	public void addFormSection(Section formSection) {
+		this.formSections.add(formSection);
+	}
+
+	public void addFormSections(List<Section> formSections) {
+		this.formSections.addAll(formSections);
+	}
+
+	public List<Question> getFormQuestions() {
+		return this.formQuestions;
+	}
+
+	public void addFormQuestion(Question formQuestion) {
+		this.formQuestions.add(formQuestion);
+	}
+
+	public void addFormQuestions(List<Question> formQuestions) {
+		this.formQuestions.addAll(formQuestions);
+	}
+
+	public List<DisplayedItem> getFormDisplayedItems() {
+		return this.formDisplayedItems;
+	}
+
+	public void addFormDisplayedItem(DisplayedItem formDisplayedItem) {
+		this.formDisplayedItems.add(formDisplayedItem);
+	}
+
+	public void addFormSDisplayedItems(List<DisplayedItem> formDisplayedItems) {
+		this.formDisplayedItems.addAll(formDisplayedItems);
 	}
 
 	public String getTitle() {
@@ -67,8 +139,8 @@ public class Form {
 		return this.ID;
 	}
 
-	public void setID(String iD) {
-		this.ID = iD;
+	public void setID(String ID) {
+		this.ID = ID;
 	}
 
 	public String getVersion() {
@@ -109,6 +181,14 @@ public class Form {
 
 	public void setFileName(String fileName) {
 		this.fileName = fileName;
+	}
+
+	public Document getFormDocument() {
+		return this.formDocument;
+	}
+
+	private void setFormDocument(Document formDocument) {
+		this.formDocument = formDocument;
 	}
 
 }
