@@ -89,10 +89,10 @@ public class ObservationHelper {
 				throw new WebApplicationException(
 						Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
 			}
-			observation.addDerivedFrom().setReference("DocumentReference/" + id);
-			String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-			System.out.println(encoded);
-			System.out.println("*******************************************************************");
+//			observation.addDerivedFrom().setReference("DocumentReference/" + id);
+//			String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
+//			System.out.println(encoded);
+//			System.out.println("*******************************************************************");
 			return observation;
 		} catch (NumberFormatException e) {
 			String errorMessage = "Error 400 Bad Request (Number Format Exception): " + e.getMessage()

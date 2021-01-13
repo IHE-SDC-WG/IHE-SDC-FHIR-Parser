@@ -36,7 +36,7 @@ public class FormParser {
 		NodeList questionList = getAllQuestionNodes(childItems);
 		System.out.println("# of questions: " + questionList.getLength());
 		// get the list of questions with selected = "true";
-		ArrayList<Observation> answeredQuestions = getSelectedTrueQuestions(questionList, Id, ctx);
+		ArrayList<Observation> answeredQuestions = getAnsweredQuestions(questionList, Id, ctx);
 		return answeredQuestions;
 	}
 
@@ -48,7 +48,7 @@ public class FormParser {
 	 * @param ctx
 	 * @return
 	 */
-	public static ArrayList<Observation> getSelectedTrueQuestions(NodeList questionList, String Id, FhirContext ctx) {
+	public static ArrayList<Observation> getAnsweredQuestions(NodeList questionList, String Id, FhirContext ctx) {
 
 		ArrayList<Observation> observations = new ArrayList<Observation>();
 		Observation observation = null;
