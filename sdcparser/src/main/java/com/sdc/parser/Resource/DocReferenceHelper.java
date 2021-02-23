@@ -21,7 +21,7 @@ public class DocReferenceHelper {
 			String patientUUID) {
 		DocumentReference docRef = new DocumentReference();
 		Narrative narry = new Narrative();
-		narry.setDivAsString("This DocumentReference was created by the Infoway Parser for form " + getFormID(form));
+		//narry.setDivAsString("<div>This DocumentReference was created by the Infoway Parser for form " + getFormID(form) +"</div>");
 		docRef.setStatus(DocumentReferenceStatus.CURRENT);
 		docRef.setText(narry);
 		docRef.getMasterIdentifier().setSystem(SYSTEM_NAME).setValue(getFormID(form));

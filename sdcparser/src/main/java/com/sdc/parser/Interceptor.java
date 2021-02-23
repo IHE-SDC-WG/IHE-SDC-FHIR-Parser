@@ -24,10 +24,12 @@ SOFTWARE.
 
 package com.sdc.parser;
 
-import static com.sdc.parser.Bundle.BundleHelper.*;
-import static com.sdc.parser.Constants.Constants.*;
-import static com.sdc.parser.FormParser.*;
-import static com.sdc.parser.ParserHelper.*;
+import static com.sdc.parser.Bundle.BundleHelper.createBundle;
+import static com.sdc.parser.Constants.Constants.LANDING_MESSAGE;
+import static com.sdc.parser.Constants.Constants.PROVENANCE_HEADER;
+import static com.sdc.parser.FormParser.parseSDCForm;
+import static com.sdc.parser.ParserHelper.getTimeStamp;
+import static com.sdc.parser.ParserHelper.getUUID;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -47,6 +49,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Observation;
 import org.w3c.dom.Document;
@@ -54,6 +57,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.api.ServerValidationModeEnum;
 import ca.uhn.fhir.rest.client.interceptor.AdditionalRequestHeadersInterceptor;
@@ -75,7 +79,7 @@ public class Interceptor {
 
 	@POST
 	@Consumes(MediaType.APPLICATION_XML)
-	@Produces(MediaType.APPLICATION_XML)
+	@Produces(MediaType.TEXT_PLAIN)
 	public String loadXMLFromString(String sdcForm, @QueryParam("server") String server,
 			@QueryParam("format") String format) {
 		if (format == null || format.isEmpty() || format.equals("")) {
@@ -133,11 +137,23 @@ public class Interceptor {
 			if (noServer) {
 				stringbuilder.append(encoded);
 			} else {
-				Bundle resp = client.transaction().withBundle(bundle).execute();
-				if (format.equalsIgnoreCase("json")) {
-					stringbuilder.append(ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(resp));
-				} else {
-					stringbuilder.append(ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(resp));
+				MethodOutcome resp = client.create()
+						   .resource(bundle)
+						   .prettyPrint()
+						   .encodedJson()
+						   .execute(); //client.transaction().withBundle(bundle).execute();
+				if(resp.getCreated()) {
+					IIdType id = resp.getId();
+					String created = "Bundle created with Id :  " + id;
+					stringbuilder.append(created);
+					//if (format.equalsIgnoreCase("json")) {
+						
+					//} else {
+						//stringbuilder.append(ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(resp.getResource()));
+					//}
+				}
+				else {
+					stringbuilder.append("Something went horribly wrong! What are we going to do?");
 				}
 			}
 		} catch (ParserConfigurationException e) {
