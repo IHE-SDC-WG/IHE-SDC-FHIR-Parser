@@ -8,6 +8,16 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>SDC_PARSER_SERVICE Maven Webapp</name>
 	<url>http://maven.apache.org</url>
+
+	<properties>
+		<jetty.version>9.4.28.v20200408</jetty.version>
+
+		<!-- jetty plugin properties (used when starting server locally) -->
+		<dev>true</dev>
+		<protocolAndHost>http://localhost:8080</protocolAndHost>
+
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -68,6 +78,11 @@
 			<version>2.3.3</version>
 			<scope>runtime</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlets</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -81,6 +96,12 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-maven-plugin</artifactId>
+				<version>${jetty.version}</version>
+			</plugin>
+
 		</plugins>
 		<finalName>sdcparser</finalName>
 	</build>
