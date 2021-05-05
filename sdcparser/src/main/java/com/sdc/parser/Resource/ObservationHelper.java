@@ -29,6 +29,7 @@ import org.w3c.dom.Element;
 import ca.uhn.fhir.context.FhirContext;
 
 public class ObservationHelper {
+	
 	public static Observation buildObservationResource(Element questionElement, Element listItemElement, String id,
 			FhirContext ctx) {
 
@@ -113,4 +114,5 @@ public class ObservationHelper {
 
 		return observation;
 	}
+	
 }
