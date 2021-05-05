@@ -31,6 +31,7 @@ import static com.sdc.parser.FormParser.parseSDCForm;
 import static com.sdc.parser.ParserHelper.getTimeStamp;
 import static com.sdc.parser.ParserHelper.getUUID;
 
+import java.util.List;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
@@ -52,6 +53,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Reference;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -121,12 +123,17 @@ public class Interceptor {
 			InputSource is = new InputSource(new StringReader(sdcForm));
 			Document document = builder.parse(is);
 			ArrayList<Observation> observations = parseSDCForm(document, ctx);
-			// create bundle
+
+			//TODO: Parse reference list 
+			List<Reference> ref = null;
+			
+			//create bundle
 			String patientUUID = getUUID();
 			String docRefUUID = getUUID();
 			String messageHeaderUUID = getUUID();
+			String diagRepUUID = getUUID(); 
 			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, docRefUUID,
-					messageHeaderUUID);
+					messageHeaderUUID, diagRepUUID, ref);
 			String encoded = null;
 			if (format.equalsIgnoreCase("xml")) {
 				encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);
