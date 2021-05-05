@@ -44,7 +44,6 @@ public class DiagnosticReportHelper {
         	myList.add(obRef);
         }
         diagReport.setResult(myList);
-        //myList.add(new Reference("Adrenal.Bx.Res.129_3.002.011.RC1_sdcFDF3d1c4fe4-09c3-4a7e-877f-9ddb160da6db/ver1#2118.100004300"));
         
         //presented form in Base64 
         Attachment attachment = new Attachment();
