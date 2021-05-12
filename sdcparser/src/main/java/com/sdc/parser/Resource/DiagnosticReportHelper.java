@@ -40,10 +40,13 @@ public class DiagnosticReportHelper {
         //diagReport.getResultFirstRep().setReference("Adrenal.Bx.Res.129_3.002.011.RC1_sdcFDF3d1c4fe4-09c3-4a7e-877f-9ddb160da6db/ver1#2118.100004300"); 
         List<Reference>  myList = diagReport.getResult();
         for(Observation ob: observations) {
-        	Reference obRef = new Reference(ob.getIdentifierFirstRep().getValue());
+        	Reference obRef = new Reference(ob.getIdentifierFirstRep().getValue().replaceAll("/", "."));
         	myList.add(obRef);
-        }
+        } 
         diagReport.setResult(myList);
+        for (Reference r : diagReport.getResult()) {
+        	r.getIdentifier().setSystem("https://example.org/").setValue(r.getReference()); 
+        }
         
         //presented form in Base64 
         Attachment attachment = new Attachment();
