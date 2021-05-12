@@ -69,7 +69,7 @@ public class ObservationHelper {
 			String id, FhirContext ctx) {
 		try {
 			Observation observation = new Observation();
-			observation.setSubject(new Reference("Patient/6754"));
+			observation.setSubject(new Reference("Patient/6547"));
 			observation.addPerformer().setReference("Practitioner/pathpract1");
 			observation.addIdentifier().setSystem(SYSTEM_NAME).setValue(id + "#" + questionElement.getAttribute("ID"));
 			observation.setStatus(ObservationStatus.FINAL);

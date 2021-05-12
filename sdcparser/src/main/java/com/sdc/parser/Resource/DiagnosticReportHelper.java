@@ -28,7 +28,7 @@ public class DiagnosticReportHelper {
         diagReport.getCode().getCodingFirstRep().setCode("60568-3").setSystem("http://loinc.org").setDisplay("Pathology Synoptic report"); 
         //subject
         //diagReport.setSubject(new Reference(patientUUID));
-        diagReport.getSubject().setDisplay("Jose Rodriguez").setReference("Patient/JoelAlexPatient"); 
+        diagReport.getSubject().setDisplay("Meredith Shepard").setReference("Patient/6547");
         
         //status
         diagReport.setStatus(DiagnosticReportStatus.FINAL);
