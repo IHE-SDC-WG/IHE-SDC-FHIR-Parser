@@ -20,7 +20,7 @@ public final class Constants {
 
 	public static final String PROVENANCE_HEADER = "{\"resourceType\": \"Provenance\",\"meta\": {\"versionId\": \"1\",\"lastUpdated\": \"TIME_STAMP\"},\"recorded\": \"TIME_STAMP\",\"agent\": [{\"type\": {\"text\": \"Joel and Alex testing\"}}]}";
 
-	public static final String SYSTEM_NAME = "https://CAP.org";
+	public static final String SYSTEM_NAME = "https://CAP.org/eCC";
 	public static final String PROVENANCE_SYSTEM_NAME = "http://terminology.hl7.org/CodeSystem/provenance-participant-type";
 	public static final String EVENT_CODING_SYSTEM_NAME = "http://example.org/fhir/message-events";
 
