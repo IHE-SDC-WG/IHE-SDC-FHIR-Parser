@@ -28,6 +28,12 @@ public class MessageHeaderHelper {
 		messageHeader.getEventCoding().setSystem(EVENT_CODING_SYSTEM_NAME).setCode("admin-notify");
 		messageHeader.setSource(new MessageSourceComponent().setName("IHE SDC on FHIR Parser")
 				.setEndpoint("http://localhost:8080/sdcparser"));
+		messageHeader.getSender().setDisplay("IHE SDC Parser").setReference("Organization/IHESDCParser0:");
+		messageHeader.getReason().addCoding().setCode("new-labresult").setSystem("http://hl7.org/fhir/us/medmorph/ValueSet/us-ph-triggerdefinition-namedevent"); 
+		messageHeader.addDestination().getReceiver().setReference("Organization/08686").setDisplay("Rosewood Health");
+		//add a focus and fix reason 
+		//add Destination, could set the destination based on the the selected destination in the reference implementation. Would need some way of passing that parameter
+		//set sender as hard coded Organization
 //		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(messageHeader);
 		return messageHeader;
 	}

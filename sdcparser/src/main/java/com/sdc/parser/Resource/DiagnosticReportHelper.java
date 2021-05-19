@@ -29,7 +29,8 @@ public class DiagnosticReportHelper {
         //subject
         //diagReport.setSubject(new Reference(patientUUID));
         diagReport.getSubject().setDisplay("Meredith Shepard").setReference("Patient/6547");
-        
+        //practitioner 
+        diagReport.getPerformerFirstRep().setDisplay("Dr. Alex Karev").setReference("Practitioner/pathpract1");
         //status
         diagReport.setStatus(DiagnosticReportStatus.FINAL);
         //effective date time
@@ -37,7 +38,7 @@ public class DiagnosticReportHelper {
         diagReport.getEffectiveDateTimeType().setValueAsString("2021-01-01T21:39:30.000Z"); 
         
         //result
-        //diagReport.getResultFirstRep().setReference("Adrenal.Bx.Res.129_3.002.011.RC1_sdcFDF3d1c4fe4-09c3-4a7e-877f-9ddb160da6db/ver1#2118.100004300"); 
+        //diagReport.getResultFirstRep().setReference("Adrenal.Bx.Res.129_3.002.011.RC1_sdcFDF3d1c4fe4-09c3-4a7e-877f-9ddb160da6db/ver1#2118.100004300") replace / with .;
         List<Reference>  myList = diagReport.getResult();
         for(Observation ob: observations) {
         	Reference obRef = new Reference(ob.getIdentifierFirstRep().getValue().replaceAll("/", "."));
@@ -50,7 +51,7 @@ public class DiagnosticReportHelper {
         
         //presented form in Base64 
         Attachment attachment = new Attachment();
-        attachment.setContentType("text/plain");
+        attachment.setContentType("application/xml");
         attachment.setDataElement(new Base64BinaryType(sdcForm.getBytes()));
         diagReport.addPresentedForm(attachment);
 

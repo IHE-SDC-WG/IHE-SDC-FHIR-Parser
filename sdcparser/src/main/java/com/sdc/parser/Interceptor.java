@@ -129,11 +129,14 @@ public class Interceptor {
 			
 			//create bundle
 			String patientUUID = getUUID();
-			String docRefUUID = getUUID();
+			//String docRefUUID = getUUID();
 			String messageHeaderUUID = getUUID();
-			String diagRepUUID = getUUID(); 
-			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, docRefUUID,
-					messageHeaderUUID, diagRepUUID, ref);
+			String diagRepUUID = getUUID();
+			String practitionerUUID = getUUID(); 
+			String practitionerRoleUUID = getUUID(); 
+			String specimenUUID = getUUID(); 
+			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID,
+					messageHeaderUUID, practitionerUUID, practitionerRoleUUID, specimenUUID, diagRepUUID, ref);
 			String encoded = null;
 			if (format.equalsIgnoreCase("xml")) {
 				encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);
@@ -171,6 +174,13 @@ public class Interceptor {
 			return e.getMessage();
 		}
 		return stringbuilder.toString();
+	}
+
+	private Bundle createBundle(ArrayList<Observation> observations, FhirContext ctx2, String sdcForm,
+			Document document, String patientUUID, String messageHeaderUUID, String practitionerUUID,
+			String practitionerRoleUUID, String specimenUUID, String diagRepUUID, List<Reference> ref) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

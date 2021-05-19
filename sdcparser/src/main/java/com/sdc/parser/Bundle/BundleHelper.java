@@ -1,10 +1,13 @@
 package com.sdc.parser.Bundle;
 
 import static com.sdc.parser.ParserHelper.getUUID;
-import static com.sdc.parser.Resource.DocReferenceHelper.createDocReference;
+//import static com.sdc.parser.Resource.DocReferenceHelper.createDocReference;
 import static com.sdc.parser.Resource.MessageHeaderHelper.createMessageHeader;
 import static com.sdc.parser.Resource.PatientHelper.*;
 import static com.sdc.parser.Resource.DiagnosticReportHelper.createDiagnosticReport;
+import static com.sdc.parser.Resource.PractitionerHelper.createPractitioner;
+import static com.sdc.parser.Resource.PractitionerRoleHelper.createPractitionerRole;
+import static com.sdc.parser.Resource.SpecimenHelper.createSpecimen;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -22,7 +25,7 @@ import ca.uhn.fhir.context.FhirContext;
 public class BundleHelper {
 	
 	public static Bundle createBundle(ArrayList<Observation> Observations, FhirContext ctx, String sdcForm,
-			Document form, String patientUUID, String docRefUUID, String messageHeaderUUID, String diagRepUUID, List ref) {
+			Document form, String patientUUID, String docRefUUID, String messageHeaderUUID, String diagRepUUID, String practitionerUUID, String practitionerRoleUUID, String specimenUUID, List ref) {
 		Bundle bundle = new Bundle();
 		String bundleUUID = getUUID();
 		bundle.setId(bundleUUID);
@@ -33,7 +36,14 @@ public class BundleHelper {
 		// Add patient resource
 		BundleEntryComponent patient = createBundleEntry(patientUUID, createPatient(ctx));
 		bundle.addEntry(patient);
-		// Add document reference resource
+		//Add practitioner resource 
+		BundleEntryComponent practitioner = createBundleEntry(practitionerUUID, createPractitioner(ctx));
+		bundle.addEntry(practitioner); 
+		BundleEntryComponent practitionerRole = createBundleEntry(practitionerRoleUUID, createPractitionerRole(ctx));
+		bundle.addEntry(practitionerRole); 
+		BundleEntryComponent specimen = createBundleEntry(specimenUUID, createSpecimen(ctx));
+		bundle.addEntry(specimen); 
+		// Replaced DocumentReference resource
 		//BundleEntryComponent docRef = createBundleEntry(docRefUUID, createDocReference(ctx, sdcForm, form, patientUUID));
 		//bundle.addEntry(docRef);
 		BundleEntryComponent diagRep = createBundleEntry(diagRepUUID, createDiagnosticReport(ctx, sdcForm, patientUUID, Observations)); 		
