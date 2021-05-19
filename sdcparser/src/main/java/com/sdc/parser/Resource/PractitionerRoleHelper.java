@@ -11,6 +11,7 @@ public class PractitionerRoleHelper {
 		practRole.addIdentifier().setSystem("http://someIdentifier.com").setValue("pathpractRole1");
 		practRole.getPractitioner().setReference("Practitioner/pathpract1").setDisplay("Dr. Alex Karev");
 		practRole.getOrganization().setReference("Organization/IHESDCParser0");
+		//TODO add telecom 
 		practRole.addCode().addCoding().setCode("principal-result-interpretter").setDisplay("Pathologist principally interpretting results on pathology testing").setSystem("http://www.hl7.org/fhir/us/cancer-reporting/CodeSystem/pathology-provider-types");
 		//		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(practRole);
 		return practRole;

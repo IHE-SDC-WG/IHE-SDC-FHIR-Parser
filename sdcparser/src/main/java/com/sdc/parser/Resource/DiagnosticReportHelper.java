@@ -21,7 +21,8 @@ public class DiagnosticReportHelper {
                                                        String patientUUID, ArrayList<Observation> observations) {
 
         DiagnosticReport diagReport = new DiagnosticReport();
-        
+        //Can we generate this identifier? 
+        diagReport.addIdentifier().setSystem("https://example.org/").setValue("DiagRepIHESDC0"); 
         //category 
         diagReport.getCategoryFirstRep().addCoding().setCode("LP7839-6").setSystem("http://loinc.org").setDisplay("Pathology"); 
         //code

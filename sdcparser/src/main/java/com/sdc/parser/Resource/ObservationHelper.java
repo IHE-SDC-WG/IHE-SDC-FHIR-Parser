@@ -33,6 +33,9 @@ public class ObservationHelper {
 	public static Observation buildObservationResource(Element questionElement, Element listItemElement, String id,
 			FhirContext ctx) {
 
+		//TODO pull up common Obs functions
+		//TODO reference randomly generated Specimen ID
+		
 		Observation observation = new Observation();
 		observation.setSubject(new Reference("Patient/6754"));
 		observation.addPerformer().setReference("Practitioner/pathpract1");

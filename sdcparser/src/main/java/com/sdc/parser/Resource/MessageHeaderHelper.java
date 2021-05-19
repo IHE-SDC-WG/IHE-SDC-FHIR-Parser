@@ -15,7 +15,7 @@ import ca.uhn.fhir.context.FhirContext;
 public class MessageHeaderHelper {
 	public static MessageHeader createMessageHeader(FhirContext ctx) {
 		MessageHeader messageHeader = new MessageHeader();
-		messageHeader.getText().setStatus(NarrativeStatus.GENERATED);
+		//messageHeader.getText().setStatus(NarrativeStatus.GENERATED);
 		//messageHeader.getText().setDivAsString("<div>" + MESSAGE_HEADER_TEXT + "</div>");
 		/*
 		 * Narrative messageHeaderNarrative = new Narrative();
@@ -30,7 +30,10 @@ public class MessageHeaderHelper {
 				.setEndpoint("http://localhost:8080/sdcparser"));
 		messageHeader.getSender().setDisplay("IHE SDC Parser").setReference("Organization/IHESDCParser0:");
 		messageHeader.getReason().addCoding().setCode("new-labresult").setSystem("http://hl7.org/fhir/us/medmorph/ValueSet/us-ph-triggerdefinition-namedevent"); 
+		//TODO add an endpoint if possible. 
 		messageHeader.addDestination().getReceiver().setReference("Organization/08686").setDisplay("Rosewood Health");
+		//Made this focus reference the DiagnosticReport Identifier as reference
+		messageHeader.addFocus().setReference("DiagnosticReport/DiagRepIHESDC0");
 		//add a focus and fix reason 
 		//add Destination, could set the destination based on the the selected destination in the reference implementation. Would need some way of passing that parameter
 		//set sender as hard coded Organization
