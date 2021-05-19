@@ -25,11 +25,14 @@ public class MessageHeaderHelper {
 		 * messageHeaderNarrative.setDiv(messageHeaderText);
 		 * messageHeader.setText(messageHeaderNarrative);
 		 */
-		messageHeader.getEventCoding().setSystem(EVENT_CODING_SYSTEM_NAME).setCode("admin-notify");
+		
+		//TODO Update event coding system from MedMorph https://build.fhir.org/ig/HL7/fhir-medmorph/CodeSystem-us-ph-messageheader-message-types.html
+		//TODO set code to cancer-report-message
+		messageHeader.getEventCoding().setSystem(EVENT_CODING_SYSTEM_NAME).setCode("cancer-report-message");
 		messageHeader.setSource(new MessageSourceComponent().setName("IHE SDC on FHIR Parser")
 				.setEndpoint("http://localhost:8080/sdcparser"));
 		messageHeader.getSender().setDisplay("IHE SDC Parser").setReference("Organization/IHESDCParser0:");
-		messageHeader.getReason().addCoding().setCode("new-labresult").setSystem("http://hl7.org/fhir/us/medmorph/ValueSet/us-ph-triggerdefinition-namedevent"); 
+		messageHeader.getReason().addCoding().setCode("new-labresult").setSystem("http://hl7.org/fhir/us/medmorph/CodeSystem/us-ph-triggerdefinition-namedevents"); 
 		//TODO add an endpoint if possible. 
 		messageHeader.addDestination().getReceiver().setReference("Organization/08686").setDisplay("Rosewood Health");
 		//Made this focus reference the DiagnosticReport Identifier as reference

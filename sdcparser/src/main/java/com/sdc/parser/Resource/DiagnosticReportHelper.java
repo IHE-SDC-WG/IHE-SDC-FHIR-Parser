@@ -49,7 +49,7 @@ public class DiagnosticReportHelper {
         for (Reference r : diagReport.getResult()) {
         	r.getIdentifier().setSystem("https://example.org/").setValue(r.getReference()); 
         }
-        
+        //TODO figure out how to remove references in the DiagnosticReports 
         //presented form in Base64 
         Attachment attachment = new Attachment();
         attachment.setContentType("application/xml");
