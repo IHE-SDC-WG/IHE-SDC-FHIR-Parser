@@ -25,7 +25,7 @@ import ca.uhn.fhir.context.FhirContext;
 public class BundleHelper {
 	
 	public static Bundle createBundle(ArrayList<Observation> Observations, FhirContext ctx, String sdcForm,
-			Document form, String patientUUID, String docRefUUID, String messageHeaderUUID, String diagRepUUID, String practitionerUUID, String practitionerRoleUUID, String specimenUUID, List ref) {
+			Document form, String patientUUID, String messageHeaderUUID, String diagRepUUID, String practitionerUUID, String practitionerRoleUUID, String specimenUUID, List ref) {
 		Bundle bundle = new Bundle();
 		String bundleUUID = getUUID();
 		bundle.setId(bundleUUID);
@@ -51,7 +51,7 @@ public class BundleHelper {
 				// add observations
 		for (Observation obs : Observations) {
 			obs.setSubject(new Reference(patientUUID));
-			obs.addDerivedFrom().setReference(docRefUUID);
+			//obs.addDerivedFrom().setReference(docRefUUID);
 			BundleEntryComponent bec = createBundleEntry(getUUID(), obs);
 			bundle.addEntry(bec);
 		}

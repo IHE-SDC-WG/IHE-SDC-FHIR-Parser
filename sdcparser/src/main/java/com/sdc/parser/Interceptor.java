@@ -175,12 +175,4 @@ public class Interceptor {
 		}
 		return stringbuilder.toString();
 	}
-
-	private Bundle createBundle(ArrayList<Observation> observations, FhirContext ctx2, String sdcForm,
-			Document document, String patientUUID, String messageHeaderUUID, String practitionerUUID,
-			String practitionerRoleUUID, String specimenUUID, String diagRepUUID, List<Reference> ref) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }
