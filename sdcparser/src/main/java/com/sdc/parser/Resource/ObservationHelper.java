@@ -34,13 +34,15 @@ public class ObservationHelper {
 			FhirContext ctx) {
 
 		Observation observation = new Observation();
-		// observation.setSubject(new Reference("Patient/6754"));
+		observation.setSubject(new Reference("Patient/6754"));
+		observation.addPerformer().setReference("Practitioner/pathpract1");
 		observation.addIdentifier().setSystem(SYSTEM_NAME).setValue(id + "#" + questionElement.getAttribute("ID"));
 		observation.setStatus(ObservationStatus.FINAL);
 		observation.getCode().addCoding().setSystem(SYSTEM_NAME).setCode(questionElement.getAttribute("ID"))
 				.setDisplay(questionElement.getAttribute("title"));
 		observation.setValue(new CodeableConcept()).getValueCodeableConcept().addCoding().setSystem(SYSTEM_NAME)
 				.setCode(listItemElement.getAttribute("ID")).setDisplay(listItemElement.getAttribute("title"));
+		observation.getSpecimen().setReference("Specimen/specimen875758333");
 		// observation.addDerivedFrom().setReference("DocumentReference/" + id);
 //		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
 		return observation;
@@ -49,9 +51,11 @@ public class ObservationHelper {
 
 	public static Observation buildMultiSelectObservationResource(Element questionElement, String id, FhirContext ctx) {
 		Observation observation = new Observation();
-		// observation.setSubject(new Reference("Patient/6754"));
+		observation.setSubject(new Reference("Patient/6754"));
+		observation.addPerformer().setReference("Practitioner/pathpract1");
 		observation.addIdentifier().setSystem(SYSTEM_NAME).setValue(id + "." + questionElement.getAttribute("ID"));
 		observation.setStatus(ObservationStatus.FINAL);
+		observation.getSpecimen().setReference("Specimen/specimen875758333");
 		observation.getCode().addCoding().setSystem(SYSTEM_NAME).setCode(questionElement.getAttribute("ID"))
 				.setDisplay(questionElement.getAttribute("title"));
 		// observation.addDerivedFrom().setReference("DocumentReference/" + id);
@@ -73,6 +77,7 @@ public class ObservationHelper {
 			observation.addPerformer().setReference("Practitioner/pathpract1");
 			observation.addIdentifier().setSystem(SYSTEM_NAME).setValue(id + "#" + questionElement.getAttribute("ID"));
 			observation.setStatus(ObservationStatus.FINAL);
+			observation.getSpecimen().setReference("Specimen/specimen875758333");
 			observation.getCode().addCoding().setSystem(SYSTEM_NAME).setCode(questionElement.getAttribute("ID"))
 					.setDisplay(questionElement.getAttribute("title"));
 			if (type == INTEGER) {

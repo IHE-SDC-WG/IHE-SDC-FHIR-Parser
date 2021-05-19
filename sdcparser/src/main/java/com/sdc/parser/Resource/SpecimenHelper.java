@@ -1,6 +1,7 @@
 package com.sdc.parser.Resource;
 
 import org.hl7.fhir.r4.model.Specimen;
+import org.hl7.fhir.r4.model.Specimen.SpecimenStatus;
 
 import ca.uhn.fhir.context.FhirContext;
 
@@ -8,8 +9,9 @@ public class SpecimenHelper {
 
 	public static Specimen createSpecimen(FhirContext ctx) {
 		Specimen specimen = new Specimen();
-		specimen.addIdentifier().setSystem("http://someIdentifier.com").setValue("specimen1");
-		//add a status 
+		specimen.addIdentifier().setSystem("http://someIdentifier.com").setValue("specimen875758333");
+		specimen.setStatus(SpecimenStatus.AVAILABLE);
+		//add a specimen status
 		specimen.getType().addCoding().setCode("TUMOR").setDisplay("Tumor").setSystem("http://terminology.hl7.org/CodeSystem/v2-0487");
 // bodysite and method are not possible in the parser since they are derived from the form. These should be coded as SNOMED
 		//add collection.bodysite
