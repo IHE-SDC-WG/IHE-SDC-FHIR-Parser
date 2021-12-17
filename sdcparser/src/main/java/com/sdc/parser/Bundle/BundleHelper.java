@@ -5,6 +5,7 @@ import static com.sdc.parser.Resource.DocReferenceHelper.createDocReference;
 import static com.sdc.parser.Resource.MessageHeaderHelper.createMessageHeader;
 import static com.sdc.parser.Resource.PatientHelper.*;
 import static com.sdc.parser.Resource.PractitionerHelper.*;
+import static com.sdc.parser.Resource.PractitionerRoleHelper.*;
 import static com.sdc.parser.Resource.DiagnosticReportHelper.createDiagnosticReport;
 
 import java.util.List;
@@ -23,7 +24,7 @@ import ca.uhn.fhir.context.FhirContext;
 public class BundleHelper {
 	
 	public static Bundle createBundle(ArrayList<Observation> Observations, FhirContext ctx, String sdcForm,
-			Document form, String patientUUID, String practUUID, String docRefUUID, String messageHeaderUUID, String diagRepUUID, List ref) {
+			Document form, String patientUUID, String practUUID, String practRoleUUID, String docRefUUID, String messageHeaderUUID, String diagRepUUID, List ref) {
 		Bundle bundle = new Bundle();
 		String bundleUUID = getUUID();
 		bundle.setId(bundleUUID);
@@ -37,6 +38,9 @@ public class BundleHelper {
 		//Add Practitioner resource
 		BundleEntryComponent pract = createBundleEntry(practUUID, createPractitioner(ctx));
 		bundle.addEntry(pract);
+		//Add PractitionerRole resource
+		BundleEntryComponent practRole = createBundleEntry(practRoleUUID, createPractitionerRolePractitioner(ctx));
+		bundle.addEntry(practRole);
 		// Add document reference resource
 		//BundleEntryComponent docRef = createBundleEntry(docRefUUID, createDocReference(ctx, sdcForm, form, patientUUID));
 		//bundle.addEntry(docRef);
