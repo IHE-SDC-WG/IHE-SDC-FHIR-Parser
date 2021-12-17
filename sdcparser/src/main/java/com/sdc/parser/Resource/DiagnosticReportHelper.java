@@ -28,18 +28,19 @@ public class DiagnosticReportHelper {
             String patientUUID, ArrayList<Observation> observations) {
 
         DiagnosticReport diagReport = new DiagnosticReport();
+      
+        // meta 
+        diagReport.getMeta().addProfile("http://hl7.org/fhir/us/core/StructureDefinition/us-core-diagnosticreport-note");
+        //category 
+        diagReport.getCategoryFirstRep().addCoding().setCode("LP7839-6").setSystem("http://loinc.org").setDisplay("Pathology"); 
+        //code
+        diagReport.getCode().getCodingFirstRep().setCode("60568-3").setSystem("http://loinc.org").setDisplay("Pathology Synoptic report"); 
+        //subject
+        //diagReport.setSubject(new Reference(patientUUID));
+        diagReport.getSubject().setDisplay("Jose Rodriguez").setReference("Patient/JoelAlexPatient"); 
+        
+        //status
 
-        // category
-        diagReport.getCategoryFirstRep().addCoding().setCode("LP7839-6").setSystem("http://loinc.org")
-                .setDisplay("Pathology");
-        // code
-        diagReport.getCode().getCodingFirstRep().setCode("60568-3").setSystem("http://loinc.org")
-                .setDisplay("Pathology Synoptic report");
-        // subject
-        // diagReport.setSubject(new Reference(patientUUID));
-        diagReport.getSubject().setDisplay("Jose Rodriguez").setReference("Patient/JoelAlexPatient");
-
-        // status
         diagReport.setStatus(DiagnosticReportStatus.FINAL);
         // effective date time
         // diagReport.setEffective(new DateTimeType());
