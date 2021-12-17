@@ -22,6 +22,8 @@ public class DiagnosticReportHelper {
 
         DiagnosticReport diagReport = new DiagnosticReport();
         
+        // meta 
+        diagReport.getMeta().addProfile("http://hl7.org/fhir/us/core/StructureDefinition/us-core-diagnosticreport-note");
         //category 
         diagReport.getCategoryFirstRep().addCoding().setCode("LP7839-6").setSystem("http://loinc.org").setDisplay("Pathology"); 
         //code
