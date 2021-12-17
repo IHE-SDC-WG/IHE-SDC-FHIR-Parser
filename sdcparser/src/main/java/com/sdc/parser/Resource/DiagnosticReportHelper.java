@@ -52,7 +52,7 @@ public class DiagnosticReportHelper {
         
         //presented form in Base64 
         Attachment attachment = new Attachment();
-        attachment.setContentType("text/plain");
+        attachment.setContentType("application/xml");
         attachment.setDataElement(new Base64BinaryType(sdcForm.getBytes()));
         diagReport.addPresentedForm(attachment);
 
