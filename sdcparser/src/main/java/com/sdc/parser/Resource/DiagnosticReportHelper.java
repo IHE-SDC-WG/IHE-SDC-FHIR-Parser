@@ -68,38 +68,4 @@ public class DiagnosticReportHelper {
 
         return diagReport;
     }
-
-    private static void addMeta(DiagnosticReport diagReport) {
-        Meta diagMeta = new Meta();
-
-        //Profile
-        String profile = getAnnotationValue("profile",diagReport);
-        CanonicalType diagProfile = new CanonicalType(profile);
-        List<CanonicalType> of = new ArrayList<>();
-        of.add(diagProfile);
-        diagMeta.setProfile(of);
-        
-        diagReport.setMeta(diagMeta);
-    }
-
-    private static String getAnnotationValue(String annotationName, DiagnosticReport diagReport) {
-        return (String) Arrays.asList(diagReport.getClass().getAnnotations()).stream().map(a -> {
-            Class<? extends Annotation> type = a.annotationType();
-            Map<String, Method> methods = Arrays.asList(type.getDeclaredMethods()).stream().map(m -> {
-                return new ImmutablePair<String, Method>(m.getName(), m);
-            }).collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
-            return new ImmutablePair<Annotation, Map<String, Method>>(a, methods);
-        }).collect(Collectors.toMap(Pair::getLeft, Pair::getRight)).entrySet().stream().map(
-                e -> {
-                    Set<String> methodNames = e.getValue().keySet();
-                    try {
-                        return methodNames.contains(annotationName)
-                                ? e.getValue().get(annotationName).invoke(e.getKey(), (Object[]) null)
-                                : "";
-                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
-                        e1.printStackTrace();
-                    }
-                    return "";
-                }).findFirst().orElse("");
-    }
 }
