@@ -8,6 +8,7 @@ public class PatientHelper {
 	public static Patient createPatient(FhirContext ctx) {
 		Patient patient = new Patient();
 		patient.getMeta().addProfile("http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient");
+		//TODO: add US-Core extensions, but none are required for US-Core Patient 
 		patient.addIdentifier().setSystem("urn:system").setValue("JoelAlexPatient");
 		patient.addName().setFamily("Rodriguez").addGiven("Jose");
 		patient.setGender(org.hl7.fhir.r4.model.Enumerations.AdministrativeGender.MALE);

@@ -11,6 +11,7 @@ public class PractitionerHelper {
         pract.getMeta().addProfile("http://hl7.org/fhir/us/core/StructureDefinition/us-core-practitioner");
 		pract.addName().setFamily("Bit").addGiven("Rex");
 		pract.addIdentifier().setSystem("http://someIdentifier.com").setValue("pathpract1");
+        pract.addIdentifier().setSystem("http://hl7.org/fhir/sid/us-npi").setValue("193757595");
 //		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(pract);
 		return pract;
 	}
