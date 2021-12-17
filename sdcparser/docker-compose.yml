@@ -7,6 +7,9 @@ services:
     working_dir: /apps
     ports:
       - "8080:8080"
+      - "8000:8000"
     # Substitute the following with whatever
     # makes sense for your java webapp
     command: mvn clean package jetty:run
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n
