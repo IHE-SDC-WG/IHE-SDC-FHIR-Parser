@@ -129,10 +129,11 @@ public class Interceptor {
 			
 			//create bundle
 			String patientUUID = getUUID();
+			String practUUID = getUUID(); 
 			String docRefUUID = getUUID();
 			String messageHeaderUUID = getUUID();
 			String diagRepUUID = getUUID(); 
-			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, docRefUUID,
+			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, practUUID, docRefUUID,
 					messageHeaderUUID, diagRepUUID, ref);
 			String encoded = null;
 			if (format.equalsIgnoreCase("xml")) {
