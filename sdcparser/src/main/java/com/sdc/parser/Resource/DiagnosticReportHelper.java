@@ -1,31 +1,23 @@
 package com.sdc.parser.Resource;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Config.PatientConfig;
+
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Base64BinaryType;
-import org.hl7.fhir.r4.model.CanonicalType;
-import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.DiagnosticReport;
-import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.DiagnosticReport.DiagnosticReportStatus;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Reference;
 
 import ca.uhn.fhir.context.FhirContext;
 
 public class DiagnosticReportHelper {
     public static DiagnosticReport createDiagnosticReport(FhirContext ctx, String sdcForm,
-            String patientUUID, ArrayList<Observation> observations) {
+            String patientUUID, ArrayList<Observation> observations, ConfigValues configValues) {
 
         DiagnosticReport diagReport = new DiagnosticReport();
       
@@ -37,7 +29,9 @@ public class DiagnosticReportHelper {
         diagReport.getCode().getCodingFirstRep().setCode("60568-3").setSystem("http://loinc.org").setDisplay("Pathology Synoptic report"); 
         //subject
         //diagReport.setSubject(new Reference(patientUUID));
-        diagReport.getSubject().setDisplay("Jose Rodriguez").setReference("Patient/JoelAlexPatient"); 
+        PatientConfig patientConfig = configValues.getPatientConfig();
+        diagReport.getSubject().setDisplay(patientConfig.getFullName()).setReference("Patient/"
+            + patientConfig.getSystem().values().toArray()[0]); 
         
         //status
 
