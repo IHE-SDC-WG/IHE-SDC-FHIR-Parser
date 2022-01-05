@@ -1,22 +1,21 @@
 package com.sdc.parser.Bundle;
 
 import static com.sdc.parser.ParserHelper.getUUID;
-import static com.sdc.parser.Resource.DocReferenceHelper.createDocReference;
-import static com.sdc.parser.Resource.MessageHeaderHelper.createMessageHeader;
-import static com.sdc.parser.Resource.PatientHelper.*;
-import static com.sdc.parser.Resource.PractitionerHelper.*;
-import static com.sdc.parser.Resource.PractitionerRoleHelper.*;
 import static com.sdc.parser.Resource.DiagnosticReportHelper.createDiagnosticReport;
+import static com.sdc.parser.Resource.MessageHeaderHelper.createMessageHeader;
+import static com.sdc.parser.Resource.PatientHelper.createPatient;
+import static com.sdc.parser.Resource.PractitionerHelper.createPractitioner;
+import static com.sdc.parser.Resource.PractitionerRoleHelper.createPractitionerRolePractitioner;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
-import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.w3c.dom.Document;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -49,6 +48,12 @@ public class BundleHelper {
 				// add observations
 		for (Observation obs : Observations) {
 			obs.setSubject(new Reference(patientUUID));
+			//TODO: Investigate
+			/*
+			A question is a parent only if it has "childitems"
+				hasmember => haschildren
+				derivedFrom => the parent question
+			*/
 			obs.addDerivedFrom().setReference(docRefUUID);
 			BundleEntryComponent bec = createBundleEntry(getUUID(), obs);
 			bundle.addEntry(bec);

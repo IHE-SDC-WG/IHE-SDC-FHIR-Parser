@@ -139,13 +139,14 @@ public class ParserHelper {
 		return false;
 	}
 
-	public static Element getTextQuestion(Element questionElement) {
-		Element textQuestionElement = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
-		return textQuestionElement;
-	}
+	// public static Element getTextQuestionResponseField(Element questionElement) {
+	// 	Element textQuestionElement = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
+	// 	return textQuestionElement;
+	// }
 
-	public static Element getTextQuestionResponse(Element textQuestion) {
-		Element responseElement = (Element) textQuestion.getElementsByTagName("Response").item(0);
+	public static Element getTextQuestionResponse(Element questionElement) {
+		Element textQuestionElement = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
+		Element responseElement = (Element) textQuestionElement.getElementsByTagName("Response").item(0);
 		return responseElement;
 	}
 
@@ -154,15 +155,25 @@ public class ParserHelper {
 		return integerElement.getAttribute("val");
 	}
 
-	public static boolean isTextQuestionOfTypeAndHasResponse(String type, Element textQuestionResponse) {
-		NodeList dateTimeElementList = textQuestionResponse.getElementsByTagName(type);
-		if (dateTimeElementList.getLength() > 0) {
-			Element dateTimeElement = (Element) dateTimeElementList.item(0);
-			if (dateTimeElement.hasAttribute("val")) {
-				return true;
-			}
+	/**
+	 * @param type
+	 * @param textQuestionResponse
+	 * @return The textQuestion of that type, or else null
+	 */
+	public static Element getTextQuestionOfType(String type, Element textQuestionResponse) {
+		NodeList textElementList = textQuestionResponse.getElementsByTagName(type);
+		if (textElementList.getLength() > 0) {
+			return (Element) textElementList.item(0);
 		}
-		return false;
+		return null;
+	}
+
+	public static boolean isTextQuestionResponseEmpty(Element textElementResponse) {
+		boolean valEmpty = !textElementResponse.hasAttribute("val");
+		if (!valEmpty) {
+			return textElementResponse.getAttribute("val").length() == 0;
+		}
+		return valEmpty;
 	}
 
 	/**

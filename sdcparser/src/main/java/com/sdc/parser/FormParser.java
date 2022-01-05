@@ -1,16 +1,14 @@
 package com.sdc.parser;
 
-import static com.sdc.parser.Constants.Constants.BOOLEAN;
-import static com.sdc.parser.Constants.Constants.DATE;
-import static com.sdc.parser.Constants.Constants.DATETIME;
-import static com.sdc.parser.Constants.Constants.DECIMAL;
-import static com.sdc.parser.Constants.Constants.INTEGER;
-import static com.sdc.parser.Constants.Constants.STRING;
 import static com.sdc.parser.Constants.Constants.TEXT_PARSING_ERROR_MSG;
 import static com.sdc.parser.ParserHelper.*;
 import static com.sdc.parser.Resource.ObservationHelper.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import com.sdc.parser.Constants.Constants.ObservationType;
+import com.sdc.parser.Constants.Constants.TextResponseType;
 
 import org.hl7.fhir.r4.model.Observation;
 import org.w3c.dom.Document;
@@ -51,7 +49,6 @@ public class FormParser {
 	public static ArrayList<Observation> getAnsweredQuestions(NodeList questionList, String Id, FhirContext ctx) {
 
 		ArrayList<Observation> observations = new ArrayList<Observation>();
-		Observation observation = null;
 		for (int i = 0; i < questionList.getLength(); i++) {
 			Element questionElement = (Element) questionList.item(i);
 			String questionID = questionElement.getAttribute("ID");
@@ -74,8 +71,11 @@ public class FormParser {
 								System.out.println("LISTITEM.TITLE: " + listItemElement.getAttribute("title"));
 								System.out
 										.println("*******************************************************************");
-								observation = buildObservationResource(questionElement, listItemElement, Id, ctx);
-								observations.add(observation);
+								// observation = buildListObservationResource(questionElement, listItemElement,
+								// Id, ctx);
+								observations
+										.addAll(buildObservationResources(ObservationType.LIST, null, questionElement,
+												new ArrayList<>(Arrays.asList(listItemElement)), null, Id, ctx));
 							}
 
 						}
@@ -97,34 +97,38 @@ public class FormParser {
 
 					// Now if there are selected answers then only add them as components
 					if (!listElementsAnswered.isEmpty()) {
-						observation = buildMultiSelectObservationResource(questionElement, Id, ctx);
-						observations.add(observation);
-						addComponentToObservation(observation, listElementsAnswered);
-						String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-						System.out.println(encoded);
-						System.out.println("*******************************************************************");
+						// observation = buildMultiSelectObservationResource(questionElement, Id, ctx);
+						observations.addAll(buildObservationResources(ObservationType.MULTISELECT, null, questionElement,
+								listElementsAnswered, null, Id, ctx));
+						for (Observation observation : observations) {
+							String encoded = ctx.newXmlParser().setPrettyPrint(true)
+									.encodeResourceToString(observation);
+							System.out.println(encoded);
+							System.out.println("*******************************************************************");
+						}
 					}
 				}
 			} else if (isTextQuestion) {
-				Element textQuestion = getTextQuestion(questionElement);
-				Element textQuestionResponse = getTextQuestionResponse(textQuestion);
-				if (isTextQuestionOfTypeAndHasResponse(INTEGER, textQuestionResponse)) {
-					buildAndAddObservationForType(INTEGER, textQuestionResponse, questionElement, Id, ctx,
-							observations);
-				} else if (isTextQuestionOfTypeAndHasResponse(DECIMAL, textQuestionResponse)) {
-					buildAndAddObservationForType(DECIMAL, textQuestionResponse, questionElement, Id, ctx,
-							observations);
-				} else if (isTextQuestionOfTypeAndHasResponse(STRING, textQuestionResponse)) {
-					buildAndAddObservationForType(STRING, textQuestionResponse, questionElement, Id, ctx, observations);
-				} else if (isTextQuestionOfTypeAndHasResponse(BOOLEAN, textQuestionResponse)) {
-					buildAndAddObservationForType(BOOLEAN, textQuestionResponse, questionElement, Id, ctx,
-							observations);
-				} else if (isTextQuestionOfTypeAndHasResponse(DATE, textQuestionResponse)) {
-					System.out.println("Question is date");
-				} else if (isTextQuestionOfTypeAndHasResponse(DATETIME, textQuestionResponse)) {
-					buildAndAddObservationForType(DATETIME, textQuestionResponse, questionElement, Id, ctx,
-							observations);
-				} else {
+				Element textQuestionResponse = getTextQuestionResponse(questionElement);
+				TextResponseType responseType = null;
+
+				for (TextResponseType type : TextResponseType.values()) {
+					String typeAsString = type.name().toLowerCase();
+					Element textQuestionOfType = getTextQuestionOfType(typeAsString, textQuestionResponse);
+					// Type is accounted for
+					if (textQuestionOfType != null) {
+						responseType = type;
+						if (isTextQuestionResponseEmpty(textQuestionOfType)) {
+							// no response so don't store the observation
+							break;
+						}
+						String response = getTextResponseForType(typeAsString, textQuestionResponse);
+						observations.addAll(buildObservationResources(ObservationType.TEXT, type, questionElement, null,
+								response, Id, ctx));
+						break;
+					}
+				}
+				if (responseType == null) {
 					System.out.println(TEXT_PARSING_ERROR_MSG);
 				}
 			} else {
