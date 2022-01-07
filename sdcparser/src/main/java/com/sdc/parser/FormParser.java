@@ -53,6 +53,7 @@ public class FormParser {
 			Element questionElement = (Element) questionList.item(i);
 			String questionID = questionElement.getAttribute("ID");
 
+			//Subquestions get handled during the parent-question handling. This prevents repeated observations
 			if (isObservationAlreadyHandled(observations, questionID)) {
 				continue;
 			}

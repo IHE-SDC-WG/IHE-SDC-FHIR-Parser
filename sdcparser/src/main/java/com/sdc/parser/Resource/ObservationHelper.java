@@ -3,7 +3,6 @@ package com.sdc.parser.Resource;
 import static com.sdc.parser.Constants.Constants.SYSTEM_NAME;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.ws.rs.WebApplicationException;
@@ -14,7 +13,6 @@ import com.sdc.parser.FormParser;
 import com.sdc.parser.Constants.Constants.ObservationType;
 import com.sdc.parser.Constants.Constants.TextResponseType;
 
-import org.eclipse.jetty.http.HttpStatus.Code;
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.DateTimeType;
@@ -72,17 +70,29 @@ public class ObservationHelper {
 		addObservationMetaData(questionElement, id, observation, separator);
 		builtObservations.add(observation);
 
+		//When the solution to a question is a list, store the listitem response as a codeableconcept
 		if (listItemElements != null) {
 			observation.setValue(new CodeableConcept());
 			for (Element element : listItemElements) {
-				//TODO: add potential answer "value" like in 26363
 				observation.getValueCodeableConcept().addCoding().setSystem(SYSTEM_NAME)
 						.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
+
+				NodeList listItemStringNodes = element.getElementsByTagName("string");
+				if (listItemStringNodes.getLength() > 0) {
+					String listItemString = ((Element)listItemStringNodes.item(0)).getAttribute("val");
+					if (listItemString.length() > 0) {
+						String vccText = observation.getValueCodeableConcept().getText();
+						if (vccText == null) {
+							observation.getValueCodeableConcept().setText(listItemString);
+						}
+					}
+				}
 			}
 		}
 
 		NodeList subQuestionsList = questionElement.getElementsByTagName("Question");
 
+		//Track the hierarchy of observations with derivedfrom and hasmember
 		List<Observation> subAnswers = FormParser.getAnsweredQuestions(subQuestionsList, id, ctx);
 		if (subAnswers.size() > 0) {
 			for (Observation subObservation : subAnswers) {

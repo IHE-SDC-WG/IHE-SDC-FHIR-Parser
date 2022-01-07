@@ -139,11 +139,6 @@ public class ParserHelper {
 		return false;
 	}
 
-	// public static Element getTextQuestionResponseField(Element questionElement) {
-	// 	Element textQuestionElement = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
-	// 	return textQuestionElement;
-	// }
-
 	public static Element getTextQuestionResponse(Element questionElement) {
 		Element textQuestionElement = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
 		Element responseElement = (Element) textQuestionElement.getElementsByTagName("Response").item(0);

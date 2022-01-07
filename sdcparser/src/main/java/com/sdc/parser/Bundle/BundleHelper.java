@@ -48,12 +48,6 @@ public class BundleHelper {
 				// add observations
 		for (Observation obs : Observations) {
 			obs.setSubject(new Reference(patientUUID));
-			//TODO: Investigate
-			/*
-			A question is a parent only if it has "childitems"
-				hasmember => haschildren
-				derivedFrom => the parent question
-			*/
 			obs.addDerivedFrom().setReference(docRefUUID);
 			BundleEntryComponent bec = createBundleEntry(getUUID(), obs);
 			bundle.addEntry(bec);
