@@ -52,6 +52,10 @@ public class FormParser {
 		for (int i = 0; i < questionList.getLength(); i++) {
 			Element questionElement = (Element) questionList.item(i);
 			String questionID = questionElement.getAttribute("ID");
+
+			if (isObservationAlreadyHandled(observations, questionID)) {
+				continue;
+			}
 			// get the listFieldElement
 			boolean isListQuestion = isQuestionAListQuestion(questionElement);
 			boolean isTextQuestion = isQuestionATextQuestion(questionElement);
@@ -98,8 +102,9 @@ public class FormParser {
 					// Now if there are selected answers then only add them as components
 					if (!listElementsAnswered.isEmpty()) {
 						// observation = buildMultiSelectObservationResource(questionElement, Id, ctx);
-						observations.addAll(buildObservationResources(ObservationType.MULTISELECT, null, questionElement,
-								listElementsAnswered, null, Id, ctx));
+						observations
+								.addAll(buildObservationResources(ObservationType.MULTISELECT, null, questionElement,
+										listElementsAnswered, null, Id, ctx));
 						for (Observation observation : observations) {
 							String encoded = ctx.newXmlParser().setPrettyPrint(true)
 									.encodeResourceToString(observation);
@@ -137,6 +142,17 @@ public class FormParser {
 			}
 		}
 		return observations;
+	}
+
+	private static boolean isObservationAlreadyHandled(ArrayList<Observation> observations, String questionID) {
+		boolean observationAlreadyHandled = false;
+		for (Observation observation : observations) {
+			observationAlreadyHandled = observation.getCode().getCoding().get(0).getCode() == questionID;
+			if (observationAlreadyHandled) {
+				break;
+			}
+		}
+		return observationAlreadyHandled;
 	}
 
 }
