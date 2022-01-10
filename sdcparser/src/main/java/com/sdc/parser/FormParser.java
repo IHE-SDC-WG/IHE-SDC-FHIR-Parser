@@ -10,6 +10,8 @@ import java.util.Arrays;
 import com.sdc.parser.Constants.Constants.ObservationType;
 import com.sdc.parser.Constants.Constants.TextResponseType;
 
+import com.sdc.parser.Config.ConfigValues;
+
 import org.hl7.fhir.r4.model.Observation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -19,7 +21,7 @@ import org.w3c.dom.NodeList;
 import ca.uhn.fhir.context.FhirContext;
 
 public class FormParser {
-	public static ArrayList<Observation> parseSDCForm(Document document, FhirContext ctx) {
+	public static ArrayList<Observation> parseSDCForm(Document document, FhirContext ctx, ConfigValues configValues) {
 
 		// get forminstanceVersion and ID
 		String Id = getFormID(document);
@@ -34,7 +36,7 @@ public class FormParser {
 		NodeList questionList = getAllQuestionNodes(childItems);
 		System.out.println("# of questions: " + questionList.getLength());
 		// get the list of questions with selected = "true";
-		ArrayList<Observation> answeredQuestions = getAnsweredQuestions(questionList, Id, ctx);
+		ArrayList<Observation> answeredQuestions = getAnsweredQuestions(questionList, Id, ctx, configValues);
 		return answeredQuestions;
 	}
 
@@ -46,7 +48,7 @@ public class FormParser {
 	 * @param ctx
 	 * @return
 	 */
-	public static ArrayList<Observation> getAnsweredQuestions(NodeList questionList, String Id, FhirContext ctx) {
+	public static ArrayList<Observation> getAnsweredQuestions(NodeList questionList, String Id, FhirContext ctx, ConfigValues configValues) {
 
 		ArrayList<Observation> observations = new ArrayList<Observation>();
 		for (int i = 0; i < questionList.getLength(); i++) {

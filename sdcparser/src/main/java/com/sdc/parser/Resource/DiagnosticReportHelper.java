@@ -3,6 +3,8 @@ package com.sdc.parser.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Config.PatientConfig;
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Base64BinaryType;
 import org.hl7.fhir.r4.model.DiagnosticReport;
@@ -14,7 +16,7 @@ import ca.uhn.fhir.context.FhirContext;
 
 public class DiagnosticReportHelper {
     public static DiagnosticReport createDiagnosticReport(FhirContext ctx, String sdcForm,
-            String patientUUID, ArrayList<Observation> observations) {
+            String patientUUID, ArrayList<Observation> observations, ConfigValues configValues) {
 
         DiagnosticReport diagReport = new DiagnosticReport();
       
@@ -26,7 +28,9 @@ public class DiagnosticReportHelper {
         diagReport.getCode().getCodingFirstRep().setCode("60568-3").setSystem("http://loinc.org").setDisplay("Pathology Synoptic report"); 
         //subject
         //diagReport.setSubject(new Reference(patientUUID));
-        diagReport.getSubject().setDisplay("Jose Rodriguez").setReference("Patient/JoelAlexPatient"); 
+        PatientConfig patientConfig = configValues.getPatientConfig();
+        diagReport.getSubject().setDisplay(patientConfig.getFullName()).setReference("Patient/"
+            + patientConfig.getSystem().values().toArray()[0]); 
         
         //status
 

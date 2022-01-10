@@ -16,3 +16,7 @@ The WAR file will be geenerated to the /target folder
 ## Libraries used
 - https://hapifhir.io/
 - https://eclipse-ee4j.github.io/jersey/
+
+## Docker Commands: 
+docker compose up
+docker logs sdcparser_worker_1 --tail 50 -f

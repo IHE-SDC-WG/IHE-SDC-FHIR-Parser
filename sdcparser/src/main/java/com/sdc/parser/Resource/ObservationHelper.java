@@ -93,7 +93,7 @@ public class ObservationHelper {
 		NodeList subQuestionsList = questionElement.getElementsByTagName("Question");
 
 		//Track the hierarchy of observations with derivedfrom and hasmember
-		List<Observation> subAnswers = FormParser.getAnsweredQuestions(subQuestionsList, id, ctx);
+		List<Observation> subAnswers = FormParser.getAnsweredQuestions(subQuestionsList, id, ctx, null);
 		if (subAnswers.size() > 0) {
 			for (Observation subObservation : subAnswers) {
 				subObservation
