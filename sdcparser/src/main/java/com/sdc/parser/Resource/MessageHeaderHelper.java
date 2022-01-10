@@ -1,14 +1,10 @@
 package com.sdc.parser.Resource;
 
 import static com.sdc.parser.Constants.Constants.EVENT_CODING_SYSTEM_NAME;
-import static com.sdc.parser.Constants.Constants.MESSAGE_HEADER_TEXT;
 
 import org.hl7.fhir.r4.model.MessageHeader;
-import org.hl7.fhir.r4.model.Narrative;
 import org.hl7.fhir.r4.model.MessageHeader.MessageSourceComponent;
 import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
-import org.hl7.fhir.utilities.xhtml.NodeType;
-import org.hl7.fhir.utilities.xhtml.XhtmlNode;
 
 import ca.uhn.fhir.context.FhirContext;
 

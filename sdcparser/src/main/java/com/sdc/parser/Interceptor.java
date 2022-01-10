@@ -50,6 +50,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.sdc.parser.Config.ConfigValues;
+
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Observation;
@@ -68,9 +70,11 @@ import ca.uhn.fhir.rest.client.interceptor.AdditionalRequestHeadersInterceptor;
 public class Interceptor {
 
 	FhirContext ctx;
+	ConfigValues configValues;
 
-	public Interceptor() {
+	public Interceptor() throws IOException {
 		this.ctx = FhirContext.forR4();
+		this.configValues = new ConfigValues();
 	}
 
 	@GET
@@ -122,7 +126,7 @@ public class Interceptor {
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(sdcForm));
 			Document document = builder.parse(is);
-			ArrayList<Observation> observations = parseSDCForm(document, ctx);
+			ArrayList<Observation> observations = parseSDCForm(document, ctx, configValues);
 
 			//TODO: Parse reference list 
 			List<Reference> ref = null;
@@ -135,7 +139,7 @@ public class Interceptor {
 			String messageHeaderUUID = getUUID();
 			String diagRepUUID = getUUID(); 
 			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, practUUID, practRoleUUID, docRefUUID,
-					messageHeaderUUID, diagRepUUID, ref);
+					messageHeaderUUID, diagRepUUID, ref, configValues);
 			String encoded = null;
 			if (format.equalsIgnoreCase("xml")) {
 				encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);
