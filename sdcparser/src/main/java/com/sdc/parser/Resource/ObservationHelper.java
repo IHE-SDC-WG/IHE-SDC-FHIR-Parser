@@ -15,6 +15,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.sdc.parser.Config.ConfigValues;
+
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.DateTimeType;
@@ -59,18 +61,18 @@ public class ObservationHelper {
 	}
 
 	public static void buildAndAddObservationForType(String type, Element textQuestionResponse, Element questionElement,
-			String Id, FhirContext ctx, ArrayList<Observation> observations) {
+			String Id, FhirContext ctx, ArrayList<Observation> observations, ConfigValues configValues) {
 		String response = getTextResponseForType(type, textQuestionResponse);
-		Observation observation = buildTextObservationResource(type, questionElement, response, Id, ctx);
+		Observation observation = buildTextObservationResource(type, questionElement, response, Id, ctx, configValues);
 		observations.add(observation);
 	}
 
 	public static Observation buildTextObservationResource(String type, Element questionElement, String textResponse,
-			String id, FhirContext ctx) {
+			String id, FhirContext ctx, ConfigValues configValues) {
 		try {
 			Observation observation = new Observation();
-			observation.setSubject(new Reference("Patient/6754"));
-			observation.addPerformer().setReference("Practitioner/pathpract1");
+			observation.setSubject(new Reference("Patient/" + configValues.getPatientConfig().getIdentifier()));
+			observation.addPerformer().setReference("Practitioner/" + configValues.getPractitionerConfig().getIdentifier());
 			observation.addIdentifier().setSystem(SYSTEM_NAME).setValue(id + "#" + questionElement.getAttribute("ID"));
 			observation.setStatus(ObservationStatus.FINAL);
 			observation.getCode().addCoding().setSystem(SYSTEM_NAME).setCode(questionElement.getAttribute("ID"))

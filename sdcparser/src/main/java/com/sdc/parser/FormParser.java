@@ -12,6 +12,8 @@ import static com.sdc.parser.Resource.ObservationHelper.*;
 
 import java.util.ArrayList;
 
+import com.sdc.parser.Config.ConfigValues;
+
 import org.hl7.fhir.r4.model.Observation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -21,7 +23,7 @@ import org.w3c.dom.NodeList;
 import ca.uhn.fhir.context.FhirContext;
 
 public class FormParser {
-	public static ArrayList<Observation> parseSDCForm(Document document, FhirContext ctx) {
+	public static ArrayList<Observation> parseSDCForm(Document document, FhirContext ctx, ConfigValues configValues) {
 
 		// get forminstanceVersion and ID
 		String Id = getFormID(document);
@@ -36,7 +38,7 @@ public class FormParser {
 		NodeList questionList = getAllQuestionNodes(childItems);
 		System.out.println("# of questions: " + questionList.getLength());
 		// get the list of questions with selected = "true";
-		ArrayList<Observation> answeredQuestions = getAnsweredQuestions(questionList, Id, ctx);
+		ArrayList<Observation> answeredQuestions = getAnsweredQuestions(questionList, Id, ctx, configValues);
 		return answeredQuestions;
 	}
 
@@ -48,7 +50,7 @@ public class FormParser {
 	 * @param ctx
 	 * @return
 	 */
-	public static ArrayList<Observation> getAnsweredQuestions(NodeList questionList, String Id, FhirContext ctx) {
+	public static ArrayList<Observation> getAnsweredQuestions(NodeList questionList, String Id, FhirContext ctx, ConfigValues configValues) {
 
 		ArrayList<Observation> observations = new ArrayList<Observation>();
 		Observation observation = null;
@@ -110,20 +112,20 @@ public class FormParser {
 				Element textQuestionResponse = getTextQuestionResponse(textQuestion);
 				if (isTextQuestionOfTypeAndHasResponse(INTEGER, textQuestionResponse)) {
 					buildAndAddObservationForType(INTEGER, textQuestionResponse, questionElement, Id, ctx,
-							observations);
+							observations, configValues);
 				} else if (isTextQuestionOfTypeAndHasResponse(DECIMAL, textQuestionResponse)) {
 					buildAndAddObservationForType(DECIMAL, textQuestionResponse, questionElement, Id, ctx,
-							observations);
+							observations, configValues);
 				} else if (isTextQuestionOfTypeAndHasResponse(STRING, textQuestionResponse)) {
-					buildAndAddObservationForType(STRING, textQuestionResponse, questionElement, Id, ctx, observations);
+					buildAndAddObservationForType(STRING, textQuestionResponse, questionElement, Id, ctx, observations, configValues);
 				} else if (isTextQuestionOfTypeAndHasResponse(BOOLEAN, textQuestionResponse)) {
 					buildAndAddObservationForType(BOOLEAN, textQuestionResponse, questionElement, Id, ctx,
-							observations);
+							observations, configValues);
 				} else if (isTextQuestionOfTypeAndHasResponse(DATE, textQuestionResponse)) {
 					System.out.println("Question is date");
 				} else if (isTextQuestionOfTypeAndHasResponse(DATETIME, textQuestionResponse)) {
 					buildAndAddObservationForType(DATETIME, textQuestionResponse, questionElement, Id, ctx,
-							observations);
+							observations, configValues);
 				} else {
 					System.out.println(TEXT_PARSING_ERROR_MSG);
 				}
