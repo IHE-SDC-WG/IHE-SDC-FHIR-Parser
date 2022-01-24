@@ -52,7 +52,8 @@ public class BundleHelper {
 				// add observations
 		for (Observation obs : Observations) {
 			obs.setSubject(new Reference(patientUUID));
-			obs.addDerivedFrom().setReference(docRefUUID);
+			//Commenting out the observation derivedFrom for DocumentReference
+			//obs.addDerivedFrom().setReference(docRefUUID);
 			BundleEntryComponent bec = createBundleEntry(getUUID(), obs);
 			bundle.addEntry(bec);
 		}
