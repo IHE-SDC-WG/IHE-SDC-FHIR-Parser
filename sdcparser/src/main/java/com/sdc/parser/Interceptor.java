@@ -107,13 +107,11 @@ public class Interceptor {
 			String provenanceHeader = PROVENANCE_HEADER;
 			provenanceHeader = provenanceHeader.replaceAll(Pattern.quote("TIME_STAMP"), getTimeStamp());
 			AdditionalRequestHeadersInterceptor interceptor = new AdditionalRequestHeadersInterceptor();
-			if (format.equalsIgnoreCase("xml")) {
-				interceptor.addHeaderValue("Content-Type", "application/fhir+xml");
-			} else if (format.equalsIgnoreCase("json")) {
-				interceptor.addHeaderValue("Content-Type", "application/fhir+json");
-			} else {
-				interceptor.addHeaderValue("Content-Type", "application/fhir+xml");
-			}
+			String type = switch (format.toLowerCase()) {
+				case "json" -> "json";
+				default -> "xml";
+			};
+			interceptor.addHeaderValue("Content-Type", "application/fhir+" + type);
 			interceptor.addHeaderValue("X-Provenance", provenanceHeader);
 			client = ctx.newRestfulGenericClient(url.toString());
 			ctx.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
@@ -128,17 +126,18 @@ public class Interceptor {
 			Document document = builder.parse(is);
 			ArrayList<Observation> observations = parseSDCForm(document, ctx, configValues);
 
-			//TODO: Parse reference list 
+			// TODO: Parse reference list
 			List<Reference> ref = null;
-			
-			//create bundle
+
+			// create bundle
 			String patientUUID = getUUID();
 			String practUUID = getUUID();
-			String practRoleUUID = getUUID(); 
+			String practRoleUUID = getUUID();
 			String docRefUUID = getUUID();
 			String messageHeaderUUID = getUUID();
-			String diagRepUUID = getUUID(); 
-			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, practUUID, practRoleUUID, docRefUUID,
+			String diagRepUUID = getUUID();
+			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, practUUID, practRoleUUID,
+					docRefUUID,
 					messageHeaderUUID, diagRepUUID, ref, configValues);
 			String encoded = null;
 			if (format.equalsIgnoreCase("xml")) {
@@ -151,21 +150,20 @@ public class Interceptor {
 				stringbuilder.append(encoded);
 			} else {
 				MethodOutcome resp = client.create()
-						   .resource(bundle)
-						   .prettyPrint()
-						   .encodedJson()
-						   .execute(); //client.transaction().withBundle(bundle).execute();
-				if(resp.getCreated()) {
+						.resource(bundle)
+						.prettyPrint()
+						.encodedJson()
+						.execute(); // client.transaction().withBundle(bundle).execute();
+				if (resp.getCreated()) {
 					IIdType id = resp.getId();
 					String created = "Bundle created with Id :  " + id;
 					stringbuilder.append(created);
-					//if (format.equalsIgnoreCase("json")) {
-						
-					//} else {
-						//stringbuilder.append(ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(resp.getResource()));
-					//}
-				}
-				else {
+					// if (format.equalsIgnoreCase("json")) {
+
+					// } else {
+					// stringbuilder.append(ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(resp.getResource()));
+					// }
+				} else {
 					stringbuilder.append("Something went horribly wrong! What are we going to do?");
 				}
 			}
