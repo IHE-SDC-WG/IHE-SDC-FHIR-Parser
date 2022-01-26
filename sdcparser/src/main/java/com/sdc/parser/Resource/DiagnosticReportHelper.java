@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.sdc.parser.Config.ConfigValues;
 import com.sdc.parser.Config.PatientConfig;
-
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Base64BinaryType;
 import org.hl7.fhir.r4.model.DiagnosticReport;

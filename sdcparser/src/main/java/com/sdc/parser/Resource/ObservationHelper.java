@@ -1,120 +1,116 @@
 package com.sdc.parser.Resource;
 
-import static com.sdc.parser.Constants.Constants.BOOLEAN;
-import static com.sdc.parser.Constants.Constants.DATETIME;
-import static com.sdc.parser.Constants.Constants.DECIMAL;
-import static com.sdc.parser.Constants.Constants.INTEGER;
-import static com.sdc.parser.Constants.Constants.STRING;
 import static com.sdc.parser.Constants.Constants.SYSTEM_NAME;
-import static com.sdc.parser.ParserHelper.getTextResponseForType;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.FormParser;
+import com.sdc.parser.Constants.Constants.ObservationType;
+import com.sdc.parser.Constants.Constants.TextResponseType;
 
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Observation.ObservationStatus;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
-import org.hl7.fhir.r4.model.Observation.ObservationStatus;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import ca.uhn.fhir.context.FhirContext;
 
 public class ObservationHelper {
-	
-	public static Observation buildObservationResource(Element questionElement, Element listItemElement, String id,
+	public static ArrayList<Observation> buildObservationResources(ObservationType obsType,
+			TextResponseType textResponseType,
+			Element questionElement, ArrayList<Element> listItemElements, String textResponse, String id,
 			FhirContext ctx) {
-
 		Observation observation = new Observation();
-		// observation.setSubject(new Reference("Patient/6754"));
-		observation.addIdentifier().setSystem(SYSTEM_NAME).setValue(id + "#" + questionElement.getAttribute("ID"));
-		observation.setStatus(ObservationStatus.FINAL);
-		observation.getCode().addCoding().setSystem(SYSTEM_NAME).setCode(questionElement.getAttribute("ID"))
-				.setDisplay(questionElement.getAttribute("title"));
-		observation.setValue(new CodeableConcept()).getValueCodeableConcept().addCoding().setSystem(SYSTEM_NAME)
-				.setCode(listItemElement.getAttribute("ID")).setDisplay(listItemElement.getAttribute("title"));
-		// observation.addDerivedFrom().setReference("DocumentReference/" + id);
-//		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-		return observation;
+		ArrayList<Observation> builtObservations = new ArrayList<Observation>();
+		String separator = "";
 
-	}
-
-	public static Observation buildMultiSelectObservationResource(Element questionElement, String id, FhirContext ctx) {
-		Observation observation = new Observation();
-		// observation.setSubject(new Reference("Patient/6754"));
-		observation.addIdentifier().setSystem(SYSTEM_NAME).setValue(id + "." + questionElement.getAttribute("ID"));
-		observation.setStatus(ObservationStatus.FINAL);
-		observation.getCode().addCoding().setSystem(SYSTEM_NAME).setCode(questionElement.getAttribute("ID"))
-				.setDisplay(questionElement.getAttribute("title"));
-		// observation.addDerivedFrom().setReference("DocumentReference/" + id);
-		return observation;
-	}
-
-	public static void buildAndAddObservationForType(String type, Element textQuestionResponse, Element questionElement,
-			String Id, FhirContext ctx, ArrayList<Observation> observations, ConfigValues configValues) {
-		String response = getTextResponseForType(type, textQuestionResponse);
-		Observation observation = buildTextObservationResource(type, questionElement, response, Id, ctx, configValues);
-		observations.add(observation);
-	}
-
-	public static Observation buildTextObservationResource(String type, Element questionElement, String textResponse,
-			String id, FhirContext ctx, ConfigValues configValues) {
-		try {
-			Observation observation = new Observation();
-			observation.setSubject(new Reference("Patient/" + configValues.getPatientConfig().getIdentifier()));
-			observation.addPerformer().setReference("Practitioner/" + configValues.getPractitionerConfig().getIdentifier());
-			observation.addIdentifier().setSystem(SYSTEM_NAME).setValue(id + "#" + questionElement.getAttribute("ID"));
-			observation.setStatus(ObservationStatus.FINAL);
-			observation.getCode().addCoding().setSystem(SYSTEM_NAME).setCode(questionElement.getAttribute("ID"))
-					.setDisplay(questionElement.getAttribute("title"));
-			if (type == INTEGER) {
-				observation.setValue(new IntegerType(Integer.parseInt(textResponse))).getValueIntegerType();
-			} else if (type == DECIMAL) {
-				observation.setValue(new Quantity(Double.parseDouble(textResponse))).getValueQuantity();
-			} else if (type == STRING) {
-				observation.setValue(new StringType(textResponse)).getValueStringType();
-			} else if (type == BOOLEAN) {
-				observation.setValue(new BooleanType(Boolean.parseBoolean(textResponse))).getValueBooleanType();
-			} else if (type == DATETIME) {
-				observation.setValue(new DateTimeType(textResponse)).getValueDateTimeType();
-			} else {
-				String notSupportedError = "ERROR: BUILDING OBERVATION FOR UNSUPPORTED TYPE";
-				throw new WebApplicationException(
-						Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
+		if (obsType.equals(ObservationType.LIST)) {
+			separator = "#";
+		} else if (obsType.equals(ObservationType.MULTISELECT)) {
+			separator = ".";
+		} else if (obsType.equals(ObservationType.TEXT)) {
+			separator = "#";
+			// TODO: Does patient and practitioner need to be in each observation?
+			// observation.setSubject(new Reference("Patient/6754"));
+			// observation.addPerformer().setReference("Practitioner/pathpract1");
+			switch (textResponseType) {
+				case INTEGER:
+					observation.setValue(new IntegerType(Integer.parseInt(textResponse))).getValueIntegerType();
+					break;
+				case DECIMAL:
+					observation.setValue(new Quantity(Double.parseDouble(textResponse))).getValueQuantity();
+					break;
+				case STRING:
+					observation.setValue(new StringType(textResponse)).getValueStringType();
+					break;
+				case BOOLEAN:
+					observation.setValue(new BooleanType(Boolean.parseBoolean(textResponse))).getValueBooleanType();
+					break;
+				case DATETIME:
+					observation.setValue(new DateTimeType(textResponse)).getValueDateTimeType();
+					break;
+				default:
+					String notSupportedError = "ERROR: BUILDING OBSERVATION FOR UNSUPPORTED TYPE";
+					throw new WebApplicationException(
+							Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
 			}
-//			observation.addDerivedFrom().setReference("DocumentReference/" + id);
-//			String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
-//			System.out.println(encoded);
-//			System.out.println("*******************************************************************");
-			return observation;
-		} catch (NumberFormatException e) {
-			String errorMessage = "Error 400 Bad Request (Number Format Exception): " + e.getMessage()
-					+ " is not of the correct type for question with ID " + questionElement.getAttribute("ID");
-			throw new WebApplicationException(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_XHTML_XML)
-					.entity(errorMessage).build());
 		}
+		addObservationMetaData(questionElement, id, observation, separator);
+		builtObservations.add(observation);
+
+		//When the solution to a question is a list, store the listitem response as a codeableconcept
+		if (listItemElements != null) {
+			observation.setValue(new CodeableConcept());
+			for (Element element : listItemElements) {
+				observation.getValueCodeableConcept().addCoding().setSystem(SYSTEM_NAME)
+						.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
+
+				NodeList listItemStringNodes = element.getElementsByTagName("string");
+				if (listItemStringNodes.getLength() > 0) {
+					String listItemString = ((Element)listItemStringNodes.item(0)).getAttribute("val");
+					if (listItemString.length() > 0) {
+						String vccText = observation.getValueCodeableConcept().getText();
+						if (vccText == null) {
+							observation.getValueCodeableConcept().setText(listItemString);
+						}
+					}
+				}
+			}
+		}
+
+		NodeList subQuestionsList = questionElement.getElementsByTagName("Question");
+
+		//Track the hierarchy of observations with derivedfrom and hasmember
+		List<Observation> subAnswers = FormParser.getAnsweredQuestions(subQuestionsList, id, ctx, null);
+		if (subAnswers.size() > 0) {
+			for (Observation subObservation : subAnswers) {
+				subObservation
+						.addDerivedFrom(new Reference().setIdentifier(observation.getIdentifierFirstRep()));
+				observation.addHasMember(new Reference().setIdentifier(subObservation.getIdentifierFirstRep()));
+			}
+			builtObservations.addAll(subAnswers);
+		}
+		return builtObservations;
 	}
 
-	public static Observation addComponentToObservation(Observation observation,
-			ArrayList<Element> listElementsAnswered) {
-
-		for (Element element : listElementsAnswered) {
-
-			observation.addComponent().getCode().addCoding().setSystem(SYSTEM_NAME).setCode(element.getAttribute("ID"))
-					.setDisplay(element.getAttribute("title"));
-		}
-
-		return observation;
+	private static void addObservationMetaData(Element element, String id, Observation observation, String separator) {
+		observation.addIdentifier().setSystem(SYSTEM_NAME)
+				.setValue(id + separator + element.getAttribute("ID"));
+		observation.setStatus(ObservationStatus.FINAL);
+		observation.getCode().addCoding().setSystem(SYSTEM_NAME).setCode(element.getAttribute("ID"))
+				.setDisplay(element.getAttribute("title"));
 	}
-	
+
 }
