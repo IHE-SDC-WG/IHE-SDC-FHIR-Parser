@@ -24,9 +24,10 @@ import org.w3c.dom.Document;
 import ca.uhn.fhir.context.FhirContext;
 
 public class BundleHelper {
-	
-	public static Bundle createBundle(ArrayList<Observation> Observations, FhirContext ctx, String sdcForm,
-			Document form, String patientUUID, String practUUID, String practRoleUUID, String docRefUUID, String messageHeaderUUID, String diagRepUUID, List ref, ConfigValues configValues) throws IOException {
+
+	public static Bundle createBundle(ArrayList<Observation> observations, FhirContext ctx, String sdcForm,
+			Document form, String patientUUID, String practUUID, String practRoleUUID, String docRefUUID,
+			String messageHeaderUUID, String diagRepUUID, List ref, ConfigValues configValues) throws IOException {
 		Bundle bundle = new Bundle();
 		String bundleUUID = getUUID();
 
@@ -38,33 +39,31 @@ public class BundleHelper {
 		// Add patient resource
 		BundleEntryComponent patient = createBundleEntry(patientUUID, createPatient(configValues.getPatientConfig()));
 		bundle.addEntry(patient);
-		//Add Practitioner resource
-		BundleEntryComponent pract = createBundleEntry(practUUID, createPractitioner(configValues.getPractitionerConfig()));
+		// Add Practitioner resource
+		BundleEntryComponent pract = createBundleEntry(practUUID,
+				createPractitioner(configValues.getPractitionerConfig()));
 		bundle.addEntry(pract);
-		//Add PractitionerRole resource
+		// Add PractitionerRole resource
 		BundleEntryComponent practRole = createBundleEntry(practRoleUUID, createPractitionerRolePractitioner(ctx));
 		bundle.addEntry(practRole);
 		// Add document reference resource
-		//BundleEntryComponent docRef = createBundleEntry(docRefUUID, createDocReference(ctx, sdcForm, form, patientUUID));
-		//bundle.addEntry(docRef);
-		BundleEntryComponent diagRep = createBundleEntry(diagRepUUID, createDiagnosticReport(ctx, sdcForm, patientUUID, Observations, configValues)); 		
-		bundle.addEntry(diagRep); 		
-				// add observations
-		for (Observation obs : Observations) {
-			obs.setSubject(new Reference(patientUUID));
-			//Commenting out the observation derivedFrom for DocumentReference
-			//obs.addDerivedFrom().setReference(docRefUUID);
-			BundleEntryComponent bec = createBundleEntry(getUUID(), obs);
-			bundle.addEntry(bec);
-		}
+		BundleEntryComponent diagRep = createBundleEntry(diagRepUUID,
+				createDiagnosticReport(ctx, sdcForm, patientUUID, observations, configValues));
+		bundle.addEntry(diagRep);
+
+		// add observations
+		List<Observation> patientObservations = observations.stream()
+				.map(obs -> obs.setSubject(new Reference(patientUUID))).toList();
+		patientObservations.stream().forEach(obs -> bundle.addEntry(createBundleEntry(getUUID(), obs)));
+
 		return bundle;
 	}
-	
+
 	public static BundleEntryComponent createBundleEntry(String fullUrl, Resource resource) {
 		BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
 		bundleEntryComponent.setFullUrl(fullUrl);
 		bundleEntryComponent.setResource(resource);
 		return bundleEntryComponent;
 	}
-	
+
 }
