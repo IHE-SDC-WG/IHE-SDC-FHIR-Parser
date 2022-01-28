@@ -1,7 +1,7 @@
 version: '2'
 services:
   worker:
-    image: maven:3.8.1-openjdk-17
+    image: maven:3.8.4-openjdk-17-slim
     volumes:
       - .:/apps
     working_dir: /apps
@@ -12,4 +12,4 @@ services:
     # makes sense for your java webapp
     command: mvn clean package jetty:run
     environment:
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:8000
