@@ -1,16 +1,14 @@
 package com.sdc.parser;
 
-import static com.sdc.parser.Constants.Constants.TEXT_PARSING_ERROR_MSG;
 import static com.sdc.parser.ParserHelper.*;
 import static com.sdc.parser.Resource.ObservationHelper.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.sdc.parser.Constants.Constants.ObservationType;
-import com.sdc.parser.Constants.Constants.TextResponseType;
-
 import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Config.SpecialTypes.ObservationType;
+import com.sdc.parser.Config.SpecialTypes.TextResponseType;
 
 import org.hl7.fhir.r4.model.Observation;
 import org.w3c.dom.Document;
@@ -21,6 +19,10 @@ import org.w3c.dom.NodeList;
 import ca.uhn.fhir.context.FhirContext;
 
 public class FormParser {
+
+	private static final String TEXT_PARSING_ERROR_MSG = "ERROR. TextQuestion type is not accounted for!!!!!";
+
+
 	public static ArrayList<Observation> parseSDCForm(Document document, FhirContext ctx, ConfigValues configValues) {
 
 		// get forminstanceVersion and ID
@@ -82,7 +84,7 @@ public class FormParser {
 								// Id, ctx);
 								observations
 										.addAll(buildObservationResources(ObservationType.LIST, null, questionElement,
-												new ArrayList<>(Arrays.asList(listItemElement)), null, Id, ctx));
+												new ArrayList<>(Arrays.asList(listItemElement)), null, Id, ctx, configValues));
 							}
 
 						}
@@ -107,7 +109,7 @@ public class FormParser {
 						// observation = buildMultiSelectObservationResource(questionElement, Id, ctx);
 						observations
 								.addAll(buildObservationResources(ObservationType.MULTISELECT, null, questionElement,
-										listElementsAnswered, null, Id, ctx));
+										listElementsAnswered, null, Id, ctx, configValues));
 						for (Observation observation : observations) {
 							String encoded = ctx.newXmlParser().setPrettyPrint(true)
 									.encodeResourceToString(observation);
@@ -132,7 +134,7 @@ public class FormParser {
 						}
 						String response = getTextResponseForType(typeAsString, textQuestionResponse);
 						observations.addAll(buildObservationResources(ObservationType.TEXT, type, questionElement, null,
-								response, Id, ctx));
+								response, Id, ctx, configValues));
 						break;
 					}
 				}

@@ -1,7 +1,5 @@
 package com.sdc.parser.Resource;
 
-import static com.sdc.parser.Constants.Constants.EVENT_CODING_SYSTEM_NAME;
-
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.MessageHeader.MessageSourceComponent;
 import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
@@ -9,6 +7,9 @@ import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import ca.uhn.fhir.context.FhirContext;
 
 public class MessageHeaderHelper {
+
+	private static final String EVENT_CODING_SYSTEM_NAME = "http://example.org/fhir/message-events";
+
 	public static MessageHeader createMessageHeader(FhirContext ctx) {
 		MessageHeader messageHeader = new MessageHeader();
 		messageHeader.getText().setStatus(NarrativeStatus.GENERATED);

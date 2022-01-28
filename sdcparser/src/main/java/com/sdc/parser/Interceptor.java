@@ -25,8 +25,6 @@ SOFTWARE.
 package com.sdc.parser;
 
 import static com.sdc.parser.Bundle.BundleHelper.createBundle;
-import static com.sdc.parser.Constants.Constants.LANDING_MESSAGE;
-import static com.sdc.parser.Constants.Constants.PROVENANCE_HEADER;
 import static com.sdc.parser.FormParser.parseSDCForm;
 import static com.sdc.parser.ParserHelper.getTimeStamp;
 import static com.sdc.parser.ParserHelper.getUUID;
@@ -69,6 +67,16 @@ import ca.uhn.fhir.rest.client.interceptor.AdditionalRequestHeadersInterceptor;
 @Path("/")
 public class Interceptor {
 
+	/**
+	 *
+	 */
+	private static final String SERVER_URL_ERROR = "There is something wrong with the URL of the server!!!!!";
+	private final String LANDING_MESSAGE = "<h1>Welcome to Canada Health Infoway's SDC Parser Service</h1>"
+			+ "<p></p><h3> Optional Paremeters: server = [FHIR Server endpoint the resources will be posted to]</h3>"
+			+ "<h3>Ex: /sdcparser?server=http://test.fhir.org/r4</h3>"
+			+ "<p></p><h3> Optional Paremeters: format = json/xml </h3>"
+			+ "<h3>Ex: /sdcparser?server=http://test.fhir.org/r4&format=json</h3>";
+	private final String provenanceHeaderDefault = "{\"resourceType\": \"Provenance\",\"meta\": {\"versionId\": \"1\",\"lastUpdated\": \"TIME_STAMP\"},\"recorded\": \"TIME_STAMP\",\"agent\": [{\"type\": {\"text\": \"Joel and Alex testing\"}}]}";
 	FhirContext ctx;
 	ConfigValues configValues;
 
@@ -102,10 +110,9 @@ public class Interceptor {
 			try {
 				url = new URL(server);
 			} catch (MalformedURLException mfe) {
-				return "There is something wrong with the URL of the server!!!!!";
+				return SERVER_URL_ERROR;
 			}
-			String provenanceHeader = PROVENANCE_HEADER;
-			provenanceHeader = provenanceHeader.replaceAll(Pattern.quote("TIME_STAMP"), getTimeStamp());
+			String provenanceHeader = provenanceHeaderDefault.replaceAll(Pattern.quote("TIME_STAMP"), getTimeStamp());
 			AdditionalRequestHeadersInterceptor interceptor = new AdditionalRequestHeadersInterceptor();
 			String type = switch (format.toLowerCase()) {
 				case "json" -> "json";

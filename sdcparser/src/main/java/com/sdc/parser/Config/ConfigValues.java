@@ -11,6 +11,7 @@ public class ConfigValues {
     InputStream inputStream;
     private PatientConfig patientConfig;
     private PractitionerConfig practitionerConfig;
+    private String systemName;
 
     public ConfigValues() throws IOException {
 
@@ -44,6 +45,8 @@ public class ConfigValues {
                     prop.getProperty("practitioner.last.name"), practitionerSystem,
                     prop.getProperty("practitioner.address"),
                     prop.getProperty("practitioner.telecom"));
+
+            systemName = prop.getProperty("system.name");
 
         } catch (Exception e) {
 
@@ -80,4 +83,11 @@ public class ConfigValues {
         this.practitionerConfig = practitionerConfig;
     }
 
+    public String getSystemName() {
+        return systemName;
+    }
+
+    public void setSystemName(String systemName) {
+        this.systemName = systemName;
+    }
 }

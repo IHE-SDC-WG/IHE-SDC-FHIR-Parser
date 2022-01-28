@@ -1,7 +1,5 @@
 package com.sdc.parser.Resource;
 
-import static com.sdc.parser.Constants.Constants.SYSTEM_NAME;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,8 +8,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.sdc.parser.FormParser;
-import com.sdc.parser.Constants.Constants.ObservationType;
-import com.sdc.parser.Constants.Constants.TextResponseType;
+import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Config.SpecialTypes.ObservationType;
+import com.sdc.parser.Config.SpecialTypes.TextResponseType;
 
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -31,7 +30,7 @@ public class ObservationHelper {
 	public static ArrayList<Observation> buildObservationResources(ObservationType obsType,
 			TextResponseType textResponseType,
 			Element questionElement, ArrayList<Element> listItemElements, String textResponse, String id,
-			FhirContext ctx) {
+			FhirContext ctx, ConfigValues configValues) {
 		Observation observation = new Observation();
 		ArrayList<Observation> builtObservations = new ArrayList<Observation>();
 		String separator = "";
@@ -67,19 +66,20 @@ public class ObservationHelper {
 							Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
 			}
 		}
-		addObservationMetaData(questionElement, id, observation, separator);
+		addObservationMetaData(questionElement, id, observation, separator, configValues);
 		builtObservations.add(observation);
 
-		//When the solution to a question is a list, store the listitem response as a codeableconcept
+		// When the solution to a question is a list, store the listitem response as a
+		// codeableconcept
 		if (listItemElements != null) {
 			observation.setValue(new CodeableConcept());
 			for (Element element : listItemElements) {
-				observation.getValueCodeableConcept().addCoding().setSystem(SYSTEM_NAME)
+				observation.getValueCodeableConcept().addCoding().setSystem(configValues.getSystemName())
 						.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
 
 				NodeList listItemStringNodes = element.getElementsByTagName("string");
 				if (listItemStringNodes.getLength() > 0) {
-					String listItemString = ((Element)listItemStringNodes.item(0)).getAttribute("val");
+					String listItemString = ((Element) listItemStringNodes.item(0)).getAttribute("val");
 					if (listItemString.length() > 0) {
 						String vccText = observation.getValueCodeableConcept().getText();
 						if (vccText == null) {
@@ -92,8 +92,8 @@ public class ObservationHelper {
 
 		NodeList subQuestionsList = questionElement.getElementsByTagName("Question");
 
-		//Track the hierarchy of observations with derivedfrom and hasmember
-		List<Observation> subAnswers = FormParser.getAnsweredQuestions(subQuestionsList, id, ctx, null);
+		// Track the hierarchy of observations with derivedfrom and hasmember
+		List<Observation> subAnswers = FormParser.getAnsweredQuestions(subQuestionsList, id, ctx, configValues);
 		if (subAnswers.size() > 0) {
 			for (Observation subObservation : subAnswers) {
 				subObservation
@@ -105,11 +105,12 @@ public class ObservationHelper {
 		return builtObservations;
 	}
 
-	private static void addObservationMetaData(Element element, String id, Observation observation, String separator) {
-		observation.addIdentifier().setSystem(SYSTEM_NAME)
+	private static void addObservationMetaData(Element element, String id, Observation observation, String separator,
+			ConfigValues configValues) {
+		observation.addIdentifier().setSystem(configValues.getSystemName())
 				.setValue(id + separator + element.getAttribute("ID"));
 		observation.setStatus(ObservationStatus.FINAL);
-		observation.getCode().addCoding().setSystem(SYSTEM_NAME).setCode(element.getAttribute("ID"))
+		observation.getCode().addCoding().setSystem(configValues.getSystemName()).setCode(element.getAttribute("ID"))
 				.setDisplay(element.getAttribute("title"));
 	}
 
