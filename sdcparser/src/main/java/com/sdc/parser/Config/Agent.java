@@ -6,11 +6,12 @@ public abstract class Agent {
     private String identifier;
     private String firstName;
     private String lastName;
-    private HashMap<String,String> system;
+    private HashMap<String, String> system;
     private String address;
     private String telecom;
 
-    public Agent(String identifier, String firstName, String lastName, HashMap<String,String> system, String address, String telecom) {
+    protected Agent(String identifier, String firstName, String lastName, HashMap<String, String> system, String address,
+            String telecom) {
         this.identifier = identifier;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -18,10 +19,6 @@ public abstract class Agent {
         this.address = address;
         this.telecom = telecom;
     }
- 
-
-
-
 
     /**
      * @return String return the address
@@ -79,21 +76,19 @@ public abstract class Agent {
         this.lastName = lastName;
     }
 
-
     /**
      * @return HashMap<String,String> return the system
      */
-    public HashMap<String,String> getSystem() {
+    public HashMap<String, String> getSystem() {
         return system;
     }
 
     /**
      * @param system the system to set
      */
-    public void setSystem(HashMap<String,String> system) {
+    public void setSystem(HashMap<String, String> system) {
         this.system = system;
     }
-
 
     /**
      * @return String return the identifier

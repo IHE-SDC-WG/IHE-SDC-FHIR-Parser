@@ -9,9 +9,4 @@ public class PatientConfig extends Agent {
         super(identifier, firstName, lastName, system, address, telecom);
     }
 
-
-
-
-
-
 }
