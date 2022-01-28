@@ -41,9 +41,6 @@ public class ObservationHelper {
 			separator = ".";
 		} else if (obsType.equals(ObservationType.TEXT)) {
 			separator = "#";
-			// TODO: Does patient and practitioner need to be in each observation?
-			// observation.setSubject(new Reference("Patient/6754"));
-			// observation.addPerformer().setReference("Practitioner/pathpract1");
 			switch (textResponseType) {
 				case INTEGER:
 					observation.setValue(new IntegerType(Integer.parseInt(textResponse))).getValueIntegerType();
@@ -73,20 +70,22 @@ public class ObservationHelper {
 		// codeableconcept
 		if (listItemElements != null) {
 			observation.setValue(new CodeableConcept());
-			for (Element element : listItemElements) {
-				observation.getValueCodeableConcept().addCoding().setSystem(configValues.getSystemName())
-						.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
+			String vccText = observation.getValueCodeableConcept().getText();
 
-				NodeList listItemStringNodes = element.getElementsByTagName("string");
-				if (listItemStringNodes.getLength() > 0) {
-					String listItemString = ((Element) listItemStringNodes.item(0)).getAttribute("val");
-					if (listItemString.length() > 0) {
-						String vccText = observation.getValueCodeableConcept().getText();
-						if (vccText == null) {
-							observation.getValueCodeableConcept().setText(listItemString);
-						}
-					}
-				}
+			listItemElements.stream()
+					.forEach(element -> {
+						observation.getValueCodeableConcept().addCoding()
+								.setSystem(configValues.getSystemName())
+								.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
+					});
+
+			if (vccText == null) {
+				listItemElements.stream()
+						.map(e -> e.getElementsByTagName("string"))
+						.filter(stringEl -> stringEl.getLength() > 0)
+						.map(stringEl -> ((Element) stringEl.item(0)).getAttribute("val"))
+						.filter(listItemString -> listItemString.length() > 0)
+						.forEach(listItemString -> observation.getValueCodeableConcept().setText(listItemString));
 			}
 		}
 
