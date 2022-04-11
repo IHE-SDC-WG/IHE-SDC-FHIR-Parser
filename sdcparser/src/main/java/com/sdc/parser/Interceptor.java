@@ -95,9 +95,12 @@ public class Interceptor {
 	@Consumes(MediaType.APPLICATION_XML)
 	@Produces(MediaType.TEXT_PLAIN)
 	public String loadXMLFromString(String sdcForm, @QueryParam("server") String server,
-			@QueryParam("format") String format) {
+			@QueryParam("format") String format, @QueryParam("bundleType") String bundleType) {
 		if (format == null || format.isEmpty() || format.equals("")) {
 			format = "xml";
+		}
+		if (bundleType == null || bundleType.isEmpty() || bundleType.equals("")) {
+			bundleType = "default";
 		}
 		StringBuilder stringbuilder = new StringBuilder();
 		boolean noServer = true;
@@ -181,7 +184,11 @@ public class Interceptor {
 		} catch (IOException e) {
 			return e.getMessage();
 		}
-		return stringbuilder.toString();
+		if (bundleType.equals("test")) {
+			return LANDING_MESSAGE;
+		} else {
+			return stringbuilder.toString();
+	}
 	}
 
 }
