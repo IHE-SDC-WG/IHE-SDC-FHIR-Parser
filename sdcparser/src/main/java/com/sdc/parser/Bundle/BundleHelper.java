@@ -35,29 +35,22 @@ public class BundleHelper {
 		parentBundle.setType(BundleType.MESSAGE);
 
 		// Add message header
-		BundleEntryComponent messageHeader = createBundleEntry(messageHeaderUUID, createMessageHeader(ctx));
-		parentBundle.addEntry(messageHeader);
+		parentBundle.addEntry(createBundleEntry(messageHeaderUUID, createMessageHeader(ctx)));
 
 		Bundle contentBundle = new Bundle();
 		contentBundle.setType(BundleType.COLLECTION);
 
 		// Add patient resource
-		BundleEntryComponent patient = createBundleEntry(patientUUID, createPatient(configValues.getPatientConfig()));
-		contentBundle.addEntry(patient);
+		contentBundle.addEntry(createBundleEntry(patientUUID, createPatient(configValues.getPatientConfig())));
 
 		// Add Practitioner resource
-		BundleEntryComponent pract = createBundleEntry(practUUID,
-				createPractitioner(configValues.getPractitionerConfig()));
-		contentBundle.addEntry(pract);
+		contentBundle.addEntry(createBundleEntry(practUUID, createPractitioner(configValues.getPractitionerConfig())));
 
 		// Add PractitionerRole resource
-		BundleEntryComponent practRole = createBundleEntry(practRoleUUID, createPractitionerRolePractitioner(ctx));
-		contentBundle.addEntry(practRole);
+		contentBundle.addEntry(createBundleEntry(practRoleUUID, createPractitionerRolePractitioner(ctx)));
 
 		// Add document reference resource
-		BundleEntryComponent diagRep = createBundleEntry(diagRepUUID,
-				createDiagnosticReport(ctx, sdcForm, patientUUID, observations, configValues));
-		contentBundle.addEntry(diagRep);
+		contentBundle.addEntry(createBundleEntry(diagRepUUID,createDiagnosticReport(ctx, sdcForm, patientUUID, observations, configValues)));
 
 		// add observations
 		List<Observation> patientObservations = observations.stream()
@@ -65,7 +58,7 @@ public class BundleHelper {
 		patientObservations.stream().forEach(obs -> contentBundle.addEntry(createBundleEntry(getUUID(), obs)));
 
 		// Add contentBundle
-		parentBundle.addEntry( createBundleEntry(getUUID(), contentBundle) );
+		parentBundle.addEntry(createBundleEntry(getUUID(), contentBundle));
 
 		return parentBundle;
 	}
