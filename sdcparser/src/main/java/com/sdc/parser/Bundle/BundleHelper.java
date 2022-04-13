@@ -28,35 +28,39 @@ public class BundleHelper {
 	public static Bundle createBundle(ArrayList<Observation> observations, FhirContext ctx, String sdcForm,
 			Document form, String patientUUID, String practUUID, String practRoleUUID, String docRefUUID,
 			String messageHeaderUUID, String diagRepUUID, List ref, ConfigValues configValues) throws IOException {
-		Bundle bundle = new Bundle();
+		Bundle parentBundle = new Bundle();
 		String bundleUUID = getUUID();
 
-		bundle.setId(bundleUUID);
-		bundle.setType(BundleType.MESSAGE);
+		parentBundle.setId(bundleUUID);
+		parentBundle.setType(BundleType.MESSAGE);
+
 		// Add message header
-		BundleEntryComponent messageHeader = createBundleEntry(messageHeaderUUID, createMessageHeader(ctx));
-		bundle.addEntry(messageHeader);
+		parentBundle.addEntry(createBundleEntry(messageHeaderUUID, createMessageHeader(ctx)));
+
+		Bundle contentBundle = new Bundle();
+		contentBundle.setType(BundleType.COLLECTION);
+
 		// Add patient resource
-		BundleEntryComponent patient = createBundleEntry(patientUUID, createPatient(configValues.getPatientConfig()));
-		bundle.addEntry(patient);
+		contentBundle.addEntry(createBundleEntry(patientUUID, createPatient(configValues.getPatientConfig())));
+
 		// Add Practitioner resource
-		BundleEntryComponent pract = createBundleEntry(practUUID,
-				createPractitioner(configValues.getPractitionerConfig()));
-		bundle.addEntry(pract);
+		contentBundle.addEntry(createBundleEntry(practUUID, createPractitioner(configValues.getPractitionerConfig())));
+
 		// Add PractitionerRole resource
-		BundleEntryComponent practRole = createBundleEntry(practRoleUUID, createPractitionerRolePractitioner(ctx));
-		bundle.addEntry(practRole);
+		contentBundle.addEntry(createBundleEntry(practRoleUUID, createPractitionerRolePractitioner(ctx)));
+
 		// Add document reference resource
-		BundleEntryComponent diagRep = createBundleEntry(diagRepUUID,
-				createDiagnosticReport(ctx, sdcForm, patientUUID, observations, configValues));
-		bundle.addEntry(diagRep);
+		contentBundle.addEntry(createBundleEntry(diagRepUUID,createDiagnosticReport(ctx, sdcForm, patientUUID, observations, configValues)));
 
 		// add observations
 		List<Observation> patientObservations = observations.stream()
 				.map(obs -> obs.setSubject(new Reference(patientUUID))).toList();
-		patientObservations.stream().forEach(obs -> bundle.addEntry(createBundleEntry(getUUID(), obs)));
+		patientObservations.stream().forEach(obs -> contentBundle.addEntry(createBundleEntry(getUUID(), obs)));
 
-		return bundle;
+		// Add contentBundle
+		parentBundle.addEntry(createBundleEntry(getUUID(), contentBundle));
+
+		return parentBundle;
 	}
 
 	public static BundleEntryComponent createBundleEntry(String fullUrl, Resource resource) {
