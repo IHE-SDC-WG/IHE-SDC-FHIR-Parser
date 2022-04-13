@@ -15,10 +15,13 @@ import com.sdc.parser.Config.ConfigValues;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
+import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
+
 import ca.uhn.fhir.context.FhirContext;
 
 public class BundleHelper {
@@ -36,13 +39,22 @@ public class BundleHelper {
 		entries.add(createBundleEntry(getUUID(), createPractitioner(configValues.getPractitionerConfig())));
 		entries.add(createBundleEntry(getUUID(), createPractitionerRolePractitioner(ctx)));
 		entries.add(createBundleEntry(getUUID(), createDiagnosticReport(ctx, sdcForm, getUUID(), observations, configValues)));
-		
+
 		patientObservations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
 
 		switch (bundleType) {
 			case "transaction":
 				type = BundleType.TRANSACTION;
 				addEntriesToBundle(parentBundle, entries);
+				parentBundle.getEntry().forEach(entry -> {
+					// Create request resource
+					BundleEntryRequestComponent request = new BundleEntryRequestComponent();
+					request.setUrl(entry.getResource().fhirType());
+					request.setMethod(HTTPVerb.POST);
+
+					// Add Request Resource
+					entry.setRequest(request);
+				});
 				break;
 		
 			default:		
