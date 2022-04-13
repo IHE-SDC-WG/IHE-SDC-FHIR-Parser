@@ -140,7 +140,7 @@ public class Interceptor {
 			List<Reference> ref = null;
 
 			// create bundle
-			Bundle bundle = createBundle(observations, ctx, sdcForm, configValues);
+			Bundle bundle = createBundle(bundleType, observations, ctx, sdcForm, configValues);
 			String encoded = null;
 			if (format.equalsIgnoreCase("xml")) {
 				encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);
@@ -176,11 +176,8 @@ public class Interceptor {
 		} catch (IOException e) {
 			return e.getMessage();
 		}
-		if (bundleType.equals("transaction")) {
-			return "Transaction Bundle Type In Development...";
-		} else {
-			return stringbuilder.toString();
-	}
-	}
+		
+		return stringbuilder.toString();
 
+		}
 }
