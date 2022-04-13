@@ -19,15 +19,18 @@ import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
-import org.w3c.dom.Document;
-
 import ca.uhn.fhir.context.FhirContext;
 
 public class BundleHelper {
 
 	public static Bundle createBundle(ArrayList<Observation> observations, FhirContext ctx, String sdcForm,
-			Document form, String patientUUID, String practUUID, String practRoleUUID, String docRefUUID,
-			String messageHeaderUUID, String diagRepUUID, List ref, ConfigValues configValues) throws IOException {
+			ConfigValues configValues) throws IOException {
+
+		String patientUUID = getUUID();
+		String practUUID = getUUID();
+		String practRoleUUID = getUUID();
+		String messageHeaderUUID = getUUID();
+		String diagRepUUID = getUUID();
 		Bundle parentBundle = new Bundle();
 		String bundleUUID = getUUID();
 

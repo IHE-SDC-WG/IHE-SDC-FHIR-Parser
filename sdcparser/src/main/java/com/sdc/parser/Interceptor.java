@@ -140,15 +140,7 @@ public class Interceptor {
 			List<Reference> ref = null;
 
 			// create bundle
-			String patientUUID = getUUID();
-			String practUUID = getUUID();
-			String practRoleUUID = getUUID();
-			String docRefUUID = getUUID();
-			String messageHeaderUUID = getUUID();
-			String diagRepUUID = getUUID();
-			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, practUUID, practRoleUUID,
-					docRefUUID,
-					messageHeaderUUID, diagRepUUID, ref, configValues);
+			Bundle bundle = createBundle(observations, ctx, sdcForm, configValues);
 			String encoded = null;
 			if (format.equalsIgnoreCase("xml")) {
 				encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);
