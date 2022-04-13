@@ -184,8 +184,8 @@ public class Interceptor {
 		} catch (IOException e) {
 			return e.getMessage();
 		}
-		if (bundleType.equals("test")) {
-			return LANDING_MESSAGE;
+		if (bundleType.equals("transaction")) {
+			return "Transaction Bundle Type In Development...";
 		} else {
 			return stringbuilder.toString();
 	}
