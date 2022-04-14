@@ -4,7 +4,7 @@ import static com.sdc.parser.ParserHelper.getUUID;
 import static com.sdc.parser.Resource.DiagnosticReportHelper.createDiagnosticReport;
 import static com.sdc.parser.Resource.MessageHeaderHelper.createMessageHeader;
 import static com.sdc.parser.Resource.PatientHelper.createPatient;
-import static com.sdc.parser.Resource.PractitionerHelper.createPractitioner;
+import static com.sdc.parser.Resource.PractitionerHelper.*;
 import static com.sdc.parser.Resource.PractitionerRoleHelper.createPractitionerRolePractitioner;
 
 import java.io.IOException;
@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Resource.PractitionerHelper;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
@@ -19,6 +20,7 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
 
@@ -48,6 +50,7 @@ public class BundleHelper {
 
 			aReference.setReference(practitionerEntry.getFullUrl());
 			aReference.setType(practitionerEntry.getResource().getResourceType().name());
+			aReference.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()));
 
 			thePerformer.add(aReference);
 			obs.setPerformer(thePerformer);
