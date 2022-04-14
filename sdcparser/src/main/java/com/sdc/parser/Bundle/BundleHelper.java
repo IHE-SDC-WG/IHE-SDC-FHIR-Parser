@@ -2,7 +2,6 @@ package com.sdc.parser.Bundle;
 
 import static com.sdc.parser.ParserHelper.getUUID;
 import static com.sdc.parser.Resource.DiagnosticReportHelper.createDiagnosticReport;
-import static com.sdc.parser.Resource.MessageHeaderHelper.createMessageHeader;
 import static com.sdc.parser.Resource.PatientHelper.createPatient;
 import static com.sdc.parser.Resource.PractitionerHelper.createPractitioner;
 import static com.sdc.parser.Resource.PractitionerHelper.generatePractitionerDisplay;
@@ -14,6 +13,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Resource.MessageHeaderHelper;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
@@ -72,7 +72,7 @@ public class BundleHelper {
 				type = BundleType.MESSAGE;
 
 				// Add message header
-				parentBundle.addEntry(createBundleEntry(getUUID(), createMessageHeader(ctx)));
+				parentBundle.addEntry(createBundleEntry(getUUID(), new MessageHeaderHelper().create(ctx)));
 
 				// Add Content Bundle
 				Bundle contentBundle = new Bundle();

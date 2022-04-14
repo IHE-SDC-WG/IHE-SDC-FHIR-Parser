@@ -15,14 +15,14 @@ import org.hl7.fhir.r4.model.UriType;
 
 import ca.uhn.fhir.context.FhirContext;
 
-public class MessageHeaderHelper {
+public class MessageHeaderHelper extends ResourceHelper<MessageHeader> {
 
 	private static final String VALUE_CODE = "cancer-report-message";
 	private static final String EVENT_CODING_SYSTEM_NAME = "http://example.org/fhir/message-events";
-	private static final String PROFILE_CANONICAL = "http://hl7.org/fhir/us/cancer-reporting/StructureDefinition/us-pathology-message-header";
+	private static final String PROFILE_URL = "http://hl7.org/fhir/us/cancer-reporting/StructureDefinition/us-pathology-message-header";
 	private static final String VALUESET_URL = "http://hl7.org/fhir/us/medmorph/2021Jan/CodeSystem-us-ph-messageheader-message-types.html";
 
-	public static MessageHeader createMessageHeader(FhirContext ctx) {
+	public MessageHeader initializeResource(FhirContext ctx) {
 		MessageHeader messageHeader = new MessageHeader();
 		messageHeader.getText().setStatus(NarrativeStatus.GENERATED);
 		messageHeader.getEventCoding().setSystem(EVENT_CODING_SYSTEM_NAME).setCode("admin-notify");
@@ -33,7 +33,7 @@ public class MessageHeaderHelper {
 		messageHeader.setMeta(
 			new Meta()
 				.setProfile(new ArrayList<CanonicalType>(Arrays.asList(
-						new CanonicalType(PROFILE_CANONICAL)))));
+						new CanonicalType(PROFILE_URL)))));
 		messageHeader.setExtension(
 			new ArrayList<Extension>(Arrays.asList(
 				new Extension(new UriType(VALUESET_URL))
