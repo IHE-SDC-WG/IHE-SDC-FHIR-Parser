@@ -33,14 +33,26 @@ public class BundleHelper {
 		parentBundle.setId(getUUID());
 		BundleType type;
 		ArrayList<BundleEntryComponent> entries = new ArrayList<>();
-		List<Observation> patientObservations = observations.stream().map(obs -> obs.setSubject(new Reference(getUUID()))).toList();
+		BundleEntryComponent practitionerEntry = createBundleEntry(getUUID(), createPractitioner(configValues.getPractitionerConfig()));
 
 		entries.add(createBundleEntry(getUUID(), createPatient(configValues.getPatientConfig())));
-		entries.add(createBundleEntry(getUUID(), createPractitioner(configValues.getPractitionerConfig())));
+		entries.add(practitionerEntry);
 		entries.add(createBundleEntry(getUUID(), createPractitionerRolePractitioner(ctx)));
 		entries.add(createBundleEntry(getUUID(), createDiagnosticReport(ctx, sdcForm, getUUID(), observations, configValues)));
 
-		patientObservations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
+		// Hydrate Observations
+		observations.forEach(obs -> {
+			obs.setSubject(new Reference(getUUID()));
+			List<Reference> thePerformer = new ArrayList<>();
+			Reference aReference = new Reference();
+
+			aReference.setReference(practitionerEntry.getFullUrl());
+			aReference.setType(practitionerEntry.getResource().getResourceType().name());
+
+			thePerformer.add(aReference);
+			obs.setPerformer(thePerformer);
+		});
+		observations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
 
 		switch (bundleType) {
 			case "transaction":
