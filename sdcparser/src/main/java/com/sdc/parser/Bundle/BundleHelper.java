@@ -11,18 +11,22 @@ import static com.sdc.parser.Resource.PractitionerRoleHelper.createPractitionerR
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 import com.sdc.parser.Config.ConfigValues;
 
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
+import org.hl7.fhir.r4.model.Type;
 
 import ca.uhn.fhir.context.FhirContext;
 
@@ -51,6 +55,10 @@ public class BundleHelper {
 			reference.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()));
 
 			obs.setPerformer(new ArrayList<Reference>(Arrays.asList(reference)));
+			Period period = new Period();
+			Date start = new Date();
+			period.setStart(start);
+			obs.setEffective(period);
 		});
 		observations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
 
