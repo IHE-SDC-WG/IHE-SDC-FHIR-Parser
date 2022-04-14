@@ -4,15 +4,15 @@ import static com.sdc.parser.ParserHelper.getUUID;
 import static com.sdc.parser.Resource.DiagnosticReportHelper.createDiagnosticReport;
 import static com.sdc.parser.Resource.MessageHeaderHelper.createMessageHeader;
 import static com.sdc.parser.Resource.PatientHelper.createPatient;
-import static com.sdc.parser.Resource.PractitionerHelper.*;
+import static com.sdc.parser.Resource.PractitionerHelper.createPractitioner;
+import static com.sdc.parser.Resource.PractitionerHelper.generatePractitionerDisplay;
 import static com.sdc.parser.Resource.PractitionerRoleHelper.createPractitionerRolePractitioner;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 import com.sdc.parser.Config.ConfigValues;
-import com.sdc.parser.Resource.PractitionerHelper;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
@@ -45,15 +45,12 @@ public class BundleHelper {
 		// Hydrate Observations
 		observations.forEach(obs -> {
 			obs.setSubject(new Reference(getUUID()));
-			List<Reference> thePerformer = new ArrayList<>();
-			Reference aReference = new Reference();
 
-			aReference.setReference(practitionerEntry.getFullUrl());
-			aReference.setType(practitionerEntry.getResource().getResourceType().name());
-			aReference.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()));
+			Reference reference = new Reference(practitionerEntry.getFullUrl());
+			reference.setType(practitionerEntry.getResource().getResourceType().name());
+			reference.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()));
 
-			thePerformer.add(aReference);
-			obs.setPerformer(thePerformer);
+			obs.setPerformer(new ArrayList<Reference>(Arrays.asList(reference)));
 		});
 		observations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
 
