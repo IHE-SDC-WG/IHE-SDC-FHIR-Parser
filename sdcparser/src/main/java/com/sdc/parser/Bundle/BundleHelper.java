@@ -16,7 +16,6 @@ import java.util.Date;
 import com.sdc.parser.Config.ConfigValues;
 
 import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
@@ -26,7 +25,6 @@ import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
-import org.hl7.fhir.r4.model.Type;
 
 import ca.uhn.fhir.context.FhirContext;
 
@@ -49,16 +47,11 @@ public class BundleHelper {
 		// Hydrate Observations
 		observations.forEach(obs -> {
 			obs.setSubject(new Reference(getUUID()));
-
-			Reference reference = new Reference(practitionerEntry.getFullUrl());
-			reference.setType(practitionerEntry.getResource().getResourceType().name());
-			reference.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()));
-
-			obs.setPerformer(new ArrayList<Reference>(Arrays.asList(reference)));
-			Period period = new Period();
-			Date start = new Date();
-			period.setStart(start);
-			obs.setEffective(period);
+			obs.setPerformer(new ArrayList<Reference>(Arrays.asList(
+					new Reference(practitionerEntry.getFullUrl())
+							.setType(practitionerEntry.getResource().getResourceType().name())
+							.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource())))));
+			obs.setEffective(new Period().setStart(new Date()));
 		});
 		observations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
 
@@ -67,13 +60,11 @@ public class BundleHelper {
 				type = BundleType.TRANSACTION;
 				addEntriesToBundle(parentBundle, entries);
 				parentBundle.getEntry().forEach(entry -> {
-					// Create request resource
-					BundleEntryRequestComponent request = new BundleEntryRequestComponent();
-					request.setUrl(entry.getResource().fhirType());
-					request.setMethod(HTTPVerb.POST);
-
 					// Add Request Resource
-					entry.setRequest(request);
+					entry.setRequest(
+							new BundleEntryRequestComponent()
+									.setUrl(entry.getResource().fhirType())
+									.setMethod(HTTPVerb.POST));
 				});
 				break;
 		
