@@ -11,11 +11,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import com.sdc.parser.Config.ConfigValues;
 import com.sdc.parser.Resource.MessageHeaderHelper;
 
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
@@ -52,6 +54,10 @@ public class BundleHelper {
 							.setType(practitionerEntry.getResource().getResourceType().name())
 							.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource())))));
 			obs.setEffective(new Period().setStart(new Date()));
+			obs.getCode().getCoding().forEach(coding -> {
+				List<Coding> matchingCodes = getMatchingCodes("SNOMED", coding);
+				matchingCodes.forEach(match -> obs.getCode().addCoding(match));
+			});
 		});
 		observations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
 
@@ -85,6 +91,10 @@ public class BundleHelper {
 		parentBundle.setType(type);
 
 		return parentBundle;
+	}
+
+	private static List<Coding> getMatchingCodes(String system, Coding coding) {
+		return null;
 	}
 
 	private static void addEntriesToBundle(Bundle bundle, ArrayList<BundleEntryComponent> entries) {
