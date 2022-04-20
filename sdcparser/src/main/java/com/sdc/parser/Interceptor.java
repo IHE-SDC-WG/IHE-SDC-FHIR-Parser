@@ -95,9 +95,12 @@ public class Interceptor {
 	@Consumes(MediaType.APPLICATION_XML)
 	@Produces(MediaType.TEXT_PLAIN)
 	public String loadXMLFromString(String sdcForm, @QueryParam("server") String server,
-			@QueryParam("format") String format) {
+			@QueryParam("format") String format, @QueryParam("bundleType") String bundleType) {
 		if (format == null || format.isEmpty() || format.equals("")) {
 			format = "xml";
+		}
+		if (bundleType == null || bundleType.isEmpty() || bundleType.equals("")) {
+			bundleType = "default";
 		}
 		StringBuilder stringbuilder = new StringBuilder();
 		boolean noServer = true;
@@ -137,15 +140,7 @@ public class Interceptor {
 			List<Reference> ref = null;
 
 			// create bundle
-			String patientUUID = getUUID();
-			String practUUID = getUUID();
-			String practRoleUUID = getUUID();
-			String docRefUUID = getUUID();
-			String messageHeaderUUID = getUUID();
-			String diagRepUUID = getUUID();
-			Bundle bundle = createBundle(observations, ctx, sdcForm, document, patientUUID, practUUID, practRoleUUID,
-					docRefUUID,
-					messageHeaderUUID, diagRepUUID, ref, configValues);
+			Bundle bundle = createBundle(bundleType, observations, ctx, sdcForm, configValues);
 			String encoded = null;
 			if (format.equalsIgnoreCase("xml")) {
 				encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(bundle);
@@ -181,7 +176,8 @@ public class Interceptor {
 		} catch (IOException e) {
 			return e.getMessage();
 		}
+		
 		return stringbuilder.toString();
-	}
 
+		}
 }

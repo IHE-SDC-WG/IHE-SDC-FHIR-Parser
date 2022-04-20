@@ -19,4 +19,10 @@ public class PractitionerHelper {
 
 		return pract;
 	}
+
+	public static String generatePractitionerDisplay(Practitioner practitioner) {
+		String first = String.valueOf(practitioner.getNameFirstRep().getGiven().get(0).asStringValue().charAt(0)).toUpperCase() + ".";
+		String last = practitioner.getNameFirstRep().getFamily();
+		return first + " " + last;
+	}
 }

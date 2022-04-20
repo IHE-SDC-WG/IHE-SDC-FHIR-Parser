@@ -15,13 +15,15 @@ import org.hl7.fhir.r4.model.Reference;
 import ca.uhn.fhir.context.FhirContext;
 
 public class DiagnosticReportHelper {
+    private static final String PROFILE_URL = "http://hl7.org/fhir/us/cancer-reporting/StructureDefinition/us-pathology-diagnostic-report";
+
     public static DiagnosticReport createDiagnosticReport(FhirContext ctx, String sdcForm,
             String patientUUID, ArrayList<Observation> observations, ConfigValues configValues) {
 
         DiagnosticReport diagReport = new DiagnosticReport();
       
         // meta 
-        diagReport.getMeta().addProfile("http://hl7.org/fhir/us/core/StructureDefinition/us-core-diagnosticreport-note");
+        diagReport.getMeta().addProfile(PROFILE_URL);
         //category 
         diagReport.getCategoryFirstRep().addCoding().setCode("LP7839-6").setSystem("http://loinc.org").setDisplay("Pathology"); 
         //code
