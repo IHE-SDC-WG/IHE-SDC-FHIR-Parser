@@ -11,8 +11,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import com.sdc.parser.Config.ConfigValues;
 import com.sdc.parser.Resource.MessageHeaderHelper;
@@ -23,6 +26,7 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
+import org.hl7.fhir.r4.model.ConceptMap.SourceElementComponent;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ConceptMap;
 import org.hl7.fhir.r4.model.Observation;
@@ -62,7 +66,7 @@ public class BundleHelper {
 							.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource())))));
 			obs.setEffective(new Period().setStart(new Date()));
 			obs.getCode().getCoding().forEach(coding -> {
-				getMatchingCodes("SNOMED", coding, ctx).forEach(match -> obs.getCode().addCoding(match));
+				getMatchingCodes("snomed", coding, ctx).forEach(match -> obs.getCode().addCoding(match));
 			});
 		});
 		observations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
@@ -107,8 +111,17 @@ public class BundleHelper {
 				snomedConceptMap = (ConceptMap) resource;
 			}
 		}
+
 		
-		System.out.println(snomedConceptMap.getDescription());
+
+		ConceptMap filteredGroups = snomedConceptMap.setGroup(snomedConceptMap.getGroup().stream().filter(grp -> grp.getSource().contains("cap") && grp.getTarget().contains(system)).toList());
+
+
+		List<SourceElementComponent> matchedCodes = filteredGroups.getGroup().stream().map(grp -> grp.getElement().stream()
+						.filter(elemCode -> elemCode.getCode().equals(coding.getCode())).collect(Collectors.toList()))
+				.flatMap(Collection::stream).collect(Collectors.toList());
+
+		matchedCodes.forEach(mCode -> System.out.println(mCode.getCode()));
 
 		return new ArrayList<Coding>();
 	}
