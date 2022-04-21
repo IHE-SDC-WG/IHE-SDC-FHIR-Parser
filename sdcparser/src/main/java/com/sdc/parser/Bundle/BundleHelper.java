@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sdc.parser.Config.ConfigValues;
 import com.sdc.parser.Resource.MessageHeaderHelper;
 
@@ -33,11 +32,12 @@ import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
 
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.parser.IParser;
 
 public class BundleHelper {
 
-	private static final String SNOMED_CONCEPTMAP_FILENAME = "/Skin.Melanoma.Bmk.json";
+	private static ConceptMap snomedConceptMap;
+
+	private static final String SNOMED_CONCEPTMAP_FILENAME = "Skin.Melanoma.Bmk.json";
 
 	public static Bundle createBundle(String bundleType, ArrayList<Observation> observations, FhirContext ctx, String sdcForm,
 			ConfigValues configValues) throws IOException {
@@ -100,13 +100,15 @@ public class BundleHelper {
 	}
 
 	private static List<Coding> getMatchingCodes(String system, Coding coding, FhirContext ctx) {
-		String filename = "Skin.Melanoma.Bmk.json";
-		InputStream inputStream = BundleHelper.class.getClassLoader().getResourceAsStream(filename);
-		IBaseResource resource = ctx.newJsonParser().parseResource(inputStream);
-		if (resource instanceof ConceptMap) {
-			ConceptMap cp = (ConceptMap) resource;
-			System.out.println(cp.getDescription());
+		if (snomedConceptMap == null || snomedConceptMap.isEmpty()) {
+			InputStream inputStream = BundleHelper.class.getClassLoader().getResourceAsStream(SNOMED_CONCEPTMAP_FILENAME);
+			IBaseResource resource = ctx.newJsonParser().parseResource(inputStream);
+			if (resource instanceof ConceptMap) {
+				snomedConceptMap = (ConceptMap) resource;
+			}
 		}
+		
+		System.out.println(snomedConceptMap.getDescription());
 
 		return new ArrayList<Coding>();
 	}
