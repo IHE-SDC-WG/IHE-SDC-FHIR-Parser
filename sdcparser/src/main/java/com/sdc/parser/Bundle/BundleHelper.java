@@ -23,6 +23,7 @@ import com.sdc.parser.Resource.MessageHeaderHelper;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
@@ -61,6 +62,8 @@ public class BundleHelper {
 
 		// Hydrate Observations
 		observations.forEach(obs -> {
+			List<Coding> matchedCodes = new ArrayList<>(); 
+
 			obs.setSubject(new Reference(getUUID()));
 			obs.setPerformer(new ArrayList<Reference>(Arrays.asList(
 					new Reference(practitionerEntry.getFullUrl())
@@ -68,8 +71,9 @@ public class BundleHelper {
 							.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource())))));
 			obs.setEffective(new Period().setStart(new Date()));
 			obs.getCode().getCoding().forEach(coding -> {
-				getMatchingCodes("snomed", coding, ctx).forEach(match -> obs.getCode().addCoding(match));
+				matchedCodes.addAll(getMatchingCodes("snomed", coding, ctx));
 			});
+			matchedCodes.forEach(match -> obs.getCode().addCoding(match));
 		});
 		observations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
 
@@ -106,6 +110,8 @@ public class BundleHelper {
 	}
 
 	private static List<Coding> getMatchingCodes(String system, Coding coding, FhirContext ctx) {
+		List<Coding> retVal = new ArrayList<>();
+		
 		if (snomedConceptMap == null || snomedConceptMap.isEmpty()) {
 			InputStream inputStream = BundleHelper.class.getClassLoader().getResourceAsStream(SNOMED_CONCEPTMAP_FILENAME);
 			IBaseResource resource = ctx.newJsonParser().parseResource(inputStream);
@@ -130,18 +136,13 @@ public class BundleHelper {
 			}
 		});
 
+		groupComponents.forEach((k,elemList) -> {
+			elemList.forEach(elem -> {
+				elem.getTarget().forEach(tarElem -> retVal.add(new Coding(k, tarElem.getCode(), tarElem.getDisplay())));
+			});
+		});
 
-		
-		// .stream().filter(grp -> grp.getSource().contains("cap") && grp.getTarget().contains(system)).toList();
-
-
-		// List<SourceElementComponent> matchedCodes = filteredGroups.getGroup().stream().map(grp -> grp.getElement().stream()
-		// 				.filter(elemCode -> elemCode.getCode().equals(coding.getCode())).collect(Collectors.toList()))
-		// 		.flatMap(Collection::stream).collect(Collectors.toList());
-
-		// matchedCodes.forEach(mCode -> System.out.println(mCode.getCode()));
-
-		return new ArrayList<Coding>();
+		return retVal;
 	}
 
 	private static void addEntriesToBundle(Bundle bundle, ArrayList<BundleEntryComponent> entries) {
