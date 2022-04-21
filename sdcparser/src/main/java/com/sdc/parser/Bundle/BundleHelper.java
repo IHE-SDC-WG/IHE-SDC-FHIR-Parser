@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
+import org.hl7.fhir.r4.model.ConceptMap.ConceptMapGroupComponent;
 import org.hl7.fhir.r4.model.ConceptMap.SourceElementComponent;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ConceptMap;
@@ -113,15 +115,31 @@ public class BundleHelper {
 		}
 
 		
+		HashMap<String, List<SourceElementComponent>> groupComponents = new HashMap<>();
+		snomedConceptMap.getGroup().stream().forEach(grpVal -> {
+			if (grpVal.getSource().contains("cap") && grpVal.getTarget().contains(system)) {
+				List<SourceElementComponent> compList = new ArrayList<>();
+				grpVal.getElement().forEach(elem -> {
+					if (elem.getCode().equals(coding.getCode())) {
+						compList.add(elem);
+					}
+				});
+				if (!compList.isEmpty()) {
+					groupComponents.put(grpVal.getTarget(), compList);
+				}
+			}
+		});
 
-		ConceptMap filteredGroups = snomedConceptMap.setGroup(snomedConceptMap.getGroup().stream().filter(grp -> grp.getSource().contains("cap") && grp.getTarget().contains(system)).toList());
+
+		
+		// .stream().filter(grp -> grp.getSource().contains("cap") && grp.getTarget().contains(system)).toList();
 
 
-		List<SourceElementComponent> matchedCodes = filteredGroups.getGroup().stream().map(grp -> grp.getElement().stream()
-						.filter(elemCode -> elemCode.getCode().equals(coding.getCode())).collect(Collectors.toList()))
-				.flatMap(Collection::stream).collect(Collectors.toList());
+		// List<SourceElementComponent> matchedCodes = filteredGroups.getGroup().stream().map(grp -> grp.getElement().stream()
+		// 				.filter(elemCode -> elemCode.getCode().equals(coding.getCode())).collect(Collectors.toList()))
+		// 		.flatMap(Collection::stream).collect(Collectors.toList());
 
-		matchedCodes.forEach(mCode -> System.out.println(mCode.getCode()));
+		// matchedCodes.forEach(mCode -> System.out.println(mCode.getCode()));
 
 		return new ArrayList<Coding>();
 	}
