@@ -37,7 +37,7 @@ public class BundleHelper {
 
 	private static ConceptMap snomedConceptMap;
 
-	private static final String SNOMED_CONCEPTMAP_FILENAME = "Skin.Melanoma.Bmk.json";
+	private static final String SNOMED_CONCEPTMAP_FILENAME = "CAPCkeyToSNOMEDmapNotFormatted.json";
 
 	public static Bundle createBundle(String bundleType, ArrayList<Observation> observations, FhirContext ctx, String sdcForm,
 			ConfigValues configValues) throws IOException {
