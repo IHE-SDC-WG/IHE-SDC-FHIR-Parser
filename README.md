@@ -23,3 +23,18 @@ make dev-down
 docker logs sdcparser_worker_1 --tail 50 -f
 ## AWS DevOps:
 make aws-push
+
+# Making a request
+[base]/ will return an SDC form in XML 
+base/
+### Optional Paremeters
+Send to specific Server
+server = [FHIR Server endpoint the resources will be posted to]
+Ex: /sdcparser?server=http://test.fhir.org/r4
+
+Return JSOn instead
+Optional Paremeters: format = json/xml
+Ex: /sdcparser?server=http://test.fhir.org/r4&format=json
+
+Change bundle type to transaction: [base]?bundleType=transaction
+in JSON: [base]?bundleType=transaction&format=json
