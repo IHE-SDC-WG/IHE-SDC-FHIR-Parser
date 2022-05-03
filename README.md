@@ -25,7 +25,9 @@ docker logs sdcparser_worker_1 --tail 50 -f
 make aws-push
 
 ### VS Code Docker
-If you're using VS Code and have docker running inthe background, right click on the docker-compose.yml file and click "Compose Up." This should start the service on http://localhost:8080/
+1. Clone this repo with github desktop. Install VS Code & Docker Extension 
+2. install/Start Docker Desktop 
+3. right click on the docker-compose.yml file and click "Compose Up." This 
 
 # Making a request
 [base]/ will return an SDC form in XML 
