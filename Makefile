@@ -20,7 +20,7 @@ export DOCKER_BUILDKIT=1
 ####################################################################################
 
 TAG=latest
-AWS_REPO=469914954971.dkr.ecr.us-east-2.amazonaws.com
+AWS_REPO=105227342372.dkr.ecr.us-east-2.amazonaws.com
 LOCAL_REPO=junipercds
 AWS_IMAGE=$(AWS_REPO)/$(PROJECT_NAME):$(TAG)
 LOCAL_IMAGE=$(LOCAL_REPO)/$(PROJECT_NAME)
