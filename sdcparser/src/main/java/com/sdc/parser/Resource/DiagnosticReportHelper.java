@@ -21,7 +21,9 @@ public class DiagnosticReportHelper {
             String patientUUID, ArrayList<Observation> observations, ConfigValues configValues) {
 
         DiagnosticReport diagReport = new DiagnosticReport();
-      
+        
+        //id 
+        
         // meta 
         diagReport.getMeta().addProfile(PROFILE_URL);
         //category 

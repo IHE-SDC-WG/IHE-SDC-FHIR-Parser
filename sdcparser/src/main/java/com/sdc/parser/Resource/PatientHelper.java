@@ -14,7 +14,7 @@ public class PatientHelper {
 		for (Entry<String, String> entry : patientConfig.getSystem().entrySet()) {
 			patient.addIdentifier().setSystem(entry.getKey()).setValue(entry.getValue());
 		}
-		
+//		patient.setId(cancerPathPatient);
 		patient.addName().setFamily(patientConfig.getLastName()).addGiven(patientConfig.getFirstName());
 		patient.setGender(org.hl7.fhir.r4.model.Enumerations.AdministrativeGender.MALE);
 //		String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
