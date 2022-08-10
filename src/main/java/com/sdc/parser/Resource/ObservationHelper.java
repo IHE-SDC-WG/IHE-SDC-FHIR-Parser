@@ -31,7 +31,7 @@ public class ObservationHelper {
 			TextResponseType textResponseType,
 			Element questionElement, ArrayList<Element> listItemElements, String textResponse, String id,
 			FhirContext ctx, ConfigValues configValues) {
-		Observation observation = new Observation();
+		Observation initialObservation = new Observation();
 		ArrayList<Observation> builtObservations = new ArrayList<Observation>();
 		String separator = "";
 
@@ -43,19 +43,20 @@ public class ObservationHelper {
 			separator = "#";
 			switch (textResponseType) {
 				case INTEGER:
-					observation.setValue(new IntegerType(Integer.parseInt(textResponse))).getValueIntegerType();
+					initialObservation.setValue(new IntegerType(Integer.parseInt(textResponse))).getValueIntegerType();
 					break;
 				case DECIMAL:
-					observation.setValue(new Quantity(Double.parseDouble(textResponse))).getValueQuantity();
+					initialObservation.setValue(new Quantity(Double.parseDouble(textResponse))).getValueQuantity();
 					break;
 				case STRING:
-					observation.setValue(new StringType(textResponse)).getValueStringType();
+					initialObservation.setValue(new StringType(textResponse)).getValueStringType();
 					break;
 				case BOOLEAN:
-					observation.setValue(new BooleanType(Boolean.parseBoolean(textResponse))).getValueBooleanType();
+					initialObservation.setValue(new BooleanType(Boolean.parseBoolean(textResponse)))
+							.getValueBooleanType();
 					break;
 				case DATETIME:
-					observation.setValue(new DateTimeType(textResponse)).getValueDateTimeType();
+					initialObservation.setValue(new DateTimeType(textResponse)).getValueDateTimeType();
 					break;
 				default:
 					String notSupportedError = "ERROR: BUILDING OBSERVATION FOR UNSUPPORTED TYPE";
@@ -63,31 +64,13 @@ public class ObservationHelper {
 							Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
 			}
 		}
-		addObservationMetaData(questionElement, id, observation, separator, configValues);
-		builtObservations.add(observation);
+		addObservationMetaData(questionElement, id, initialObservation, separator, configValues);
 
 		// When the solution to a question is a list, store the listitem response as a
 		// codeableconcept
-		if (listItemElements != null) {
-			observation.setValue(new CodeableConcept());
-			String vccText = observation.getValueCodeableConcept().getText();
-
-			listItemElements.stream()
-					.forEach(element -> {
-						observation.getValueCodeableConcept().addCoding()
-								.setSystem(configValues.getSystemName())
-								.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
-					});
-
-			if (vccText == null) {
-				listItemElements.stream()
-						.map(e -> e.getElementsByTagName("string"))
-						.filter(stringEl -> stringEl.getLength() > 0)
-						.map(stringEl -> ((Element) stringEl.item(0)).getAttribute("val"))
-						.filter(listItemString -> listItemString.length() > 0)
-						.forEach(listItemString -> observation.getValueCodeableConcept().setText(listItemString));
-			}
-		}
+		List<Observation> observations = addListItemsToCodeableConcept(listItemElements, configValues,
+				initialObservation, obsType);
+		builtObservations.addAll(observations);
 
 		NodeList subQuestionsList = questionElement.getElementsByTagName("Question");
 
@@ -95,13 +78,54 @@ public class ObservationHelper {
 		List<Observation> subAnswers = FormParser.getAnsweredQuestions(subQuestionsList, id, ctx, configValues);
 		if (subAnswers.size() > 0) {
 			for (Observation subObservation : subAnswers) {
-				subObservation
-						.addDerivedFrom(new Reference().setIdentifier(observation.getIdentifierFirstRep()));
-				observation.addHasMember(new Reference().setIdentifier(subObservation.getIdentifierFirstRep()));
+				observations.forEach(obs -> {
+					subObservation.addDerivedFrom(new Reference().setIdentifier(obs.getIdentifierFirstRep()));
+					obs.addHasMember(new Reference().setIdentifier(subObservation.getIdentifierFirstRep()));
+				});
 			}
 			builtObservations.addAll(subAnswers);
 		}
 		return builtObservations;
+	}
+
+	private static List<Observation> addListItemsToCodeableConcept(ArrayList<Element> listItemElements,
+			ConfigValues configValues,
+			Observation observation, ObservationType obsType) {
+		List<Observation> splitObservations = new ArrayList<>() {
+			{
+				add(observation);
+			}
+		};
+		if (listItemElements != null) {
+			observation.setValue(new CodeableConcept());
+			listItemElements.stream()
+					.forEach(element -> {
+						Observation observationToEdit = observation;
+						if (obsType.equals(ObservationType.MULTISELECT)) {
+							Observation newObservation = observation.copy();
+							observationToEdit = newObservation;
+							splitObservations.add(observationToEdit);
+						}
+						observationToEdit.getValueCodeableConcept().addCoding()
+								.setSystem(configValues.getSystemName())
+								.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
+					});
+
+			splitObservations.forEach(obs -> vccTextReplacement(listItemElements, obs));
+		}
+		return splitObservations;
+	}
+
+	private static void vccTextReplacement(ArrayList<Element> listItemElements, Observation observation) {
+		String vccText = observation.getValueCodeableConcept().getText();
+		if (vccText == null) {
+			listItemElements.stream()
+					.map(e -> e.getElementsByTagName("string"))
+					.filter(stringEl -> stringEl.getLength() > 0)
+					.map(stringEl -> ((Element) stringEl.item(0)).getAttribute("val"))
+					.filter(listItemString -> listItemString.length() > 0)
+					.forEach(listItemString -> observation.getValueCodeableConcept().setText(listItemString));
+		}
 	}
 
 	private static void addObservationMetaData(Element element, String id, Observation observation, String separator,
