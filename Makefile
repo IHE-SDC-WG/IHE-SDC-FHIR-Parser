@@ -69,6 +69,9 @@ dev-up:
 dev-down:
 	docker-compose down
 
+dev-restart: dev-down dev-up
+
+
 # dev-clean: docker-remove-container
 
 # dev-super-clean: docker-remove-container docker-remove-image
