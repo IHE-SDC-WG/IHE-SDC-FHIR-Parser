@@ -44,7 +44,10 @@ public class ConfigValues {
                     prop.getProperty("practitioner.first.name"),
                     prop.getProperty("practitioner.last.name"), practitionerSystem,
                     prop.getProperty("practitioner.address"),
-                    prop.getProperty("practitioner.telecom"));
+                    prop.getProperty("practitioner.telecom"),
+                    prop.getProperty("practitioner.hl7.key"),
+                    prop.getProperty("practitioner.hl7.value")
+                    );
 
             systemName = prop.getProperty("system.name");
 
