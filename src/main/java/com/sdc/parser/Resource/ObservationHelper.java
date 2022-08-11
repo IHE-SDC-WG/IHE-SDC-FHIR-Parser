@@ -64,12 +64,13 @@ public class ObservationHelper {
 							Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
 			}
 		}
-		addObservationMetaData(questionElement, id, initialObservation, separator, configValues);
+		;
 
 		// When the solution to a question is a list, store the listitem response as a
 		// codeableconcept
 		List<Observation> observations = addListItemsToCodeableConcept(listItemElements, configValues,
 				initialObservation, obsType);
+		addObservationMetaData(questionElement, id, observations, separator, configValues);
 		builtObservations.addAll(observations);
 
 		NodeList subQuestionsList = questionElement.getElementsByTagName("Question");
@@ -78,10 +79,9 @@ public class ObservationHelper {
 		List<Observation> subAnswers = FormParser.getAnsweredQuestions(subQuestionsList, id, ctx, configValues);
 		if (subAnswers.size() > 0) {
 			for (Observation subObservation : subAnswers) {
-				observations.forEach(obs -> {
-					subObservation.addDerivedFrom(new Reference().setIdentifier(obs.getIdentifierFirstRep()));
-					obs.addHasMember(new Reference().setIdentifier(subObservation.getIdentifierFirstRep()));
-				});
+				subObservation
+						.addDerivedFrom(new Reference().setIdentifier(initialObservation.getIdentifierFirstRep()));
+				initialObservation.addHasMember(new Reference().setIdentifier(subObservation.getIdentifierFirstRep()));
 			}
 			builtObservations.addAll(subAnswers);
 		}
@@ -111,7 +111,7 @@ public class ObservationHelper {
 								.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
 					});
 
-			splitObservations.forEach(obs -> vccTextReplacement(listItemElements, obs));
+				splitObservations.forEach(obs -> vccTextReplacement(listItemElements, obs));
 		}
 		return splitObservations;
 	}
@@ -128,13 +128,16 @@ public class ObservationHelper {
 		}
 	}
 
-	private static void addObservationMetaData(Element element, String id, Observation observation, String separator,
+	private static void addObservationMetaData(Element element, String id, List<Observation> observations,
+			String separator,
 			ConfigValues configValues) {
-		observation.addIdentifier().setSystem(configValues.getSystemName())
-				.setValue(id + separator + element.getAttribute("ID"));
-		observation.setStatus(ObservationStatus.FINAL);
-		observation.getCode().addCoding().setSystem(configValues.getSystemName()).setCode(element.getAttribute("ID"))
-				.setDisplay(element.getAttribute("title"));
+		observations.forEach(observation -> {
+					observation.addIdentifier().setSystem(configValues.getSystemName())
+							.setValue(id + separator + element.getAttribute("ID"));
+					observation.setStatus(ObservationStatus.FINAL);
+					observation.getCode().addCoding().setSystem(configValues.getSystemName())
+							.setCode(element.getAttribute("ID"))
+							.setDisplay(element.getAttribute("title"));
+				});
 	}
-
 }
