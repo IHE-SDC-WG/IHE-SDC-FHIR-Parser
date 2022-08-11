@@ -10,17 +10,11 @@ import static com.sdc.parser.Resource.PractitionerRoleHelper.createPractitionerR
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
-import com.sdc.parser.ParserHelper;
-import com.sdc.parser.Config.ConfigValues;
-import com.sdc.parser.Config.PatientConfig;
-import com.sdc.parser.Resource.MessageHeaderHelper;
+import java.util.stream.IntStream;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
@@ -37,6 +31,11 @@ import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
+
+import com.sdc.parser.ParserHelper;
+import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Config.PatientConfig;
+import com.sdc.parser.Resource.MessageHeaderHelper;
 
 import ca.uhn.fhir.context.FhirContext;
 
@@ -115,23 +114,24 @@ public class BundleHelper {
 	private static void hydrateObservations(ArrayList<Observation> observations, FhirContext ctx) {
 		observations.forEach(obs -> {
 			List<Coding> matchedCodes = new ArrayList<>();
-			List<Reference> obsPerfomerRefs = ((Practitioner) practitionerEntry.getResource()).getIdentifier().stream().map(p -> 
-					new Reference(ParserHelper.createReferenceString(practitionerEntry.getResource().getResourceType(),p.getValue()))
-					.setType(practitionerEntry.getResource().getResourceType().name())
-					.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()))
-			).collect(Collectors.toList());
-
-			// Reference obsPerformerRef = new Reference(ParserHelper.createReferenceString(practitionerEntry.getResource().getResourceType(),
-			// 		((Practitioner) practitionerEntry.getResource()).getIdentifier().get(0)
-			// 				.getValue()))
-			// 		.setType(practitionerEntry.getResource().getResourceType().name())
-			// 		.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()));
+			List<Identifier> practionerIdens = ((Practitioner) practitionerEntry.getResource()).getIdentifier();
+			List<Reference> obsPerfomerRefs =
+					IntStream.range(0, practionerIdens.size()).mapToObj(index -> {
+						Identifier identifier = practionerIdens.get(index);
+						Reference reference = new Reference(
+								ParserHelper.createReferenceString(practitionerEntry.getResource().getResourceType(),
+										identifier.getValue()));
+						if (index == 0) {
+							reference
+									.setDisplay(
+											generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()))
+									.setType(practitionerEntry.getResource().getResourceType().name());
+						}
+						return reference;
+					}).collect(Collectors.toList());
 
 			obs.setSubject(patientReference);
-			obs.setPerformer(
-				obsPerfomerRefs
-				// new ArrayList<Reference>(Arrays.asList(obsPerformerRef))
-				);
+			obs.setPerformer(obsPerfomerRefs);
 			obs.setEffective(new Period().setStart(new Date()));
 			obs.getCode().getCoding().forEach(coding -> matchedCodes.addAll(getMatchingCodes("snomed", coding, ctx)));
 			matchedCodes.forEach(match -> obs.getCode().addCoding(match));
