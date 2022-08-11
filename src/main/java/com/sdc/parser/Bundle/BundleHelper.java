@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import com.sdc.parser.ParserHelper;
 import com.sdc.parser.Config.ConfigValues;
@@ -113,14 +115,23 @@ public class BundleHelper {
 	private static void hydrateObservations(ArrayList<Observation> observations, FhirContext ctx) {
 		observations.forEach(obs -> {
 			List<Coding> matchedCodes = new ArrayList<>();
+			List<Reference> obsPerfomerRefs = ((Practitioner) practitionerEntry.getResource()).getIdentifier().stream().map(p -> 
+					new Reference(ParserHelper.createReferenceString(practitionerEntry.getResource().getResourceType(),p.getValue()))
+					.setType(practitionerEntry.getResource().getResourceType().name())
+					.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()))
+			).collect(Collectors.toList());
+
+			// Reference obsPerformerRef = new Reference(ParserHelper.createReferenceString(practitionerEntry.getResource().getResourceType(),
+			// 		((Practitioner) practitionerEntry.getResource()).getIdentifier().get(0)
+			// 				.getValue()))
+			// 		.setType(practitionerEntry.getResource().getResourceType().name())
+			// 		.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource()));
 
 			obs.setSubject(patientReference);
-			obs.setPerformer(new ArrayList<Reference>(Arrays.asList(
-					new Reference(ParserHelper.createReferenceString(practitionerEntry.getResource().getResourceType(),
-							((Practitioner) practitionerEntry.getResource()).getIdentifier().get(0)
-									.getValue()))
-							.setType(practitionerEntry.getResource().getResourceType().name())
-							.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource())))));
+			obs.setPerformer(
+				obsPerfomerRefs
+				// new ArrayList<Reference>(Arrays.asList(obsPerformerRef))
+				);
 			obs.setEffective(new Period().setStart(new Date()));
 			obs.getCode().getCoding().forEach(coding -> matchedCodes.addAll(getMatchingCodes("snomed", coding, ctx)));
 			matchedCodes.forEach(match -> obs.getCode().addCoding(match));
