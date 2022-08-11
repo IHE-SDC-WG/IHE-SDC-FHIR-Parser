@@ -15,7 +15,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import com.sdc.parser.ParserHelper;
 import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Config.PatientConfig;
 import com.sdc.parser.Resource.MessageHeaderHelper;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
@@ -42,17 +44,25 @@ public class BundleHelper {
 	private static final String SNOMED_CONCEPTMAP_FILENAME = "CAPCkeyToSNOMEDmapNotFormatted.json";
 	private static ArrayList<BundleEntryComponent> entries;
 	private static BundleEntryComponent practitionerEntry;
+	private static BundleEntryComponent patientEntry;
+	private static Reference patientReference;
 
 	public static Bundle createBundle(String bundleType, ArrayList<Observation> observations, FhirContext ctx, String sdcForm,
 			ConfigValues configValues) throws IOException {
 
 		Bundle parentBundle = new Bundle();
+		PatientConfig patientConfig = configValues.getPatientConfig();
 		parentBundle.setId(getUUID());
 
+		patientEntry = createBundleEntry(getUUID(), createPatient(configValues.getPatientConfig()));
+		patientReference = new Reference(
+				ParserHelper.createReferenceString(patientEntry.getResource().getResourceType(),
+						patientConfig.getIdentifier()))
+				.setDisplay(patientConfig.getFullName());
 		practitionerEntry = createBundleEntry(getUUID(), createPractitioner(configValues.getPractitionerConfig()));
 
 		hydrateEntries(observations, ctx, sdcForm, configValues);
-		hydrateObservations(observations, ctx, configValues);
+		hydrateObservations(observations, ctx);
 
 		parentBundle.setType(packageBundleAsType(bundleType, ctx, parentBundle));
 
@@ -62,10 +72,11 @@ public class BundleHelper {
 	private static void hydrateEntries(ArrayList<Observation> observations, FhirContext ctx, String sdcForm,
 			ConfigValues configValues) {
 		entries = new ArrayList<>();
-		entries.add(createBundleEntry(getUUID(), createPatient(configValues.getPatientConfig())));
+		entries.add(patientEntry);
 		entries.add(practitionerEntry);
 		entries.add(createBundleEntry(getUUID(), createPractitionerRolePractitioner(ctx)));
-		entries.add(createBundleEntry(getUUID(), createDiagnosticReport(ctx, sdcForm, getUUID(), observations, configValues)));
+		entries.add(createBundleEntry(getUUID(),
+				createDiagnosticReport(ctx, sdcForm, patientReference, observations, configValues)));
 	}
 
 	private static BundleType packageBundleAsType(String bundleType, FhirContext ctx, Bundle parentBundle) {
@@ -99,14 +110,15 @@ public class BundleHelper {
 		return type;
 	}
 
-	private static void hydrateObservations(ArrayList<Observation> observations, FhirContext ctx, 
-			ConfigValues configValues) {
+	private static void hydrateObservations(ArrayList<Observation> observations, FhirContext ctx) {
 		observations.forEach(obs -> {
 			List<Coding> matchedCodes = new ArrayList<>();
 
-			obs.setSubject(new Reference(getUUID()));
+			obs.setSubject(patientReference);
 			obs.setPerformer(new ArrayList<Reference>(Arrays.asList(
-					new Reference(practitionerEntry.getFullUrl())
+					new Reference(ParserHelper.createReferenceString(practitionerEntry.getResource().getResourceType(),
+							((Practitioner) practitionerEntry.getResource()).getIdentifier().get(0)
+									.getValue()))
 							.setType(practitionerEntry.getResource().getResourceType().name())
 							.setDisplay(generatePractitionerDisplay((Practitioner) practitionerEntry.getResource())))));
 			obs.setEffective(new Period().setStart(new Date()));
@@ -114,12 +126,6 @@ public class BundleHelper {
 			matchedCodes.forEach(match -> obs.getCode().addCoding(match));
 		});
 		observations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
-		// observations.stream().forEach(obs -> {
-		// 	Identifier obsIdentifier = obs.getIdentifier().stream()
-		// 			.filter(iden -> iden.getSystem().equals(configValues.getSystemName()))
-		// 			.findFirst().orElse(null);
-		// 	entries.add(createBundleEntry(obsIdentifier == null ? getUUID() : obsIdentifier.getValue(), obs));
-		// });
 	}
 
 	private static List<Coding> getMatchingCodes(String system, Coding coding, FhirContext ctx) {

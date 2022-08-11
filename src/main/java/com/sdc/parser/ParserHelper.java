@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import org.hl7.fhir.r4.model.ResourceType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -188,5 +189,9 @@ public class ParserHelper {
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		Instant instant = timestamp.toInstant();
 		return instant.toString();
+	}
+
+	public static String createReferenceString(ResourceType referenceType, String referenceValue) {
+		return referenceType.name() + '/' + referenceValue;
 	}
 }
