@@ -27,6 +27,7 @@ import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ConceptMap;
 import org.hl7.fhir.r4.model.ConceptMap.SourceElementComponent;
+import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Practitioner;
@@ -51,7 +52,7 @@ public class BundleHelper {
 		practitionerEntry = createBundleEntry(getUUID(), createPractitioner(configValues.getPractitionerConfig()));
 
 		hydrateEntries(observations, ctx, sdcForm, configValues);
-		hydrateObservations(observations, ctx);
+		hydrateObservations(observations, ctx, configValues);
 
 		parentBundle.setType(packageBundleAsType(bundleType, ctx, parentBundle));
 
@@ -98,7 +99,8 @@ public class BundleHelper {
 		return type;
 	}
 
-	private static void hydrateObservations(ArrayList<Observation> observations, FhirContext ctx) {
+	private static void hydrateObservations(ArrayList<Observation> observations, FhirContext ctx, 
+			ConfigValues configValues) {
 		observations.forEach(obs -> {
 			List<Coding> matchedCodes = new ArrayList<>();
 
@@ -112,6 +114,12 @@ public class BundleHelper {
 			matchedCodes.forEach(match -> obs.getCode().addCoding(match));
 		});
 		observations.stream().forEach(obs -> entries.add(createBundleEntry(getUUID(), obs)));
+		// observations.stream().forEach(obs -> {
+		// 	Identifier obsIdentifier = obs.getIdentifier().stream()
+		// 			.filter(iden -> iden.getSystem().equals(configValues.getSystemName()))
+		// 			.findFirst().orElse(null);
+		// 	entries.add(createBundleEntry(obsIdentifier == null ? getUUID() : obsIdentifier.getValue(), obs));
+		// });
 	}
 
 	private static List<Coding> getMatchingCodes(String system, Coding coding, FhirContext ctx) {

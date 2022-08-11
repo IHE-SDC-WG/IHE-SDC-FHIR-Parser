@@ -11,6 +11,7 @@ import com.sdc.parser.FormParser;
 import com.sdc.parser.Config.ConfigValues;
 import com.sdc.parser.Config.SpecialTypes.ObservationType;
 import com.sdc.parser.Config.SpecialTypes.TextResponseType;
+import static com.sdc.parser.ParserHelper.getUUID;
 
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -133,7 +134,7 @@ public class ObservationHelper {
 			ConfigValues configValues) {
 		observations.forEach(observation -> {
 					observation.addIdentifier().setSystem(configValues.getSystemName())
-							.setValue(id + separator + element.getAttribute("ID"));
+							.setValue(getUUID());
 					observation.setStatus(ObservationStatus.FINAL);
 					observation.getCode().addCoding().setSystem(configValues.getSystemName())
 							.setCode(element.getAttribute("ID"))
