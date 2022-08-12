@@ -1,20 +1,34 @@
 package com.sdc.parser;
 
-import static com.sdc.parser.ParserHelper.*;
-import static com.sdc.parser.Resource.ObservationHelper.*;
+import static com.sdc.parser.ParserHelper.getAllChildrenFromBody;
+import static com.sdc.parser.ParserHelper.getAllQuestionNodes;
+import static com.sdc.parser.ParserHelper.getBodyElement;
+import static com.sdc.parser.ParserHelper.getFormID;
+import static com.sdc.parser.ParserHelper.getListFieldEelementToCheckForMultiSelect;
+import static com.sdc.parser.ParserHelper.getTextQuestionOfType;
+import static com.sdc.parser.ParserHelper.getTextQuestionResponse;
+import static com.sdc.parser.ParserHelper.getTextResponseForType;
+import static com.sdc.parser.ParserHelper.isQuestionAListQuestion;
+import static com.sdc.parser.ParserHelper.isQuestionATextQuestion;
+import static com.sdc.parser.ParserHelper.isSection;
+import static com.sdc.parser.ParserHelper.isTextQuestionResponseEmpty;
+import static com.sdc.parser.Resource.ObservationHelper.buildObservationResources;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-
-import com.sdc.parser.Config.ConfigValues;
-import com.sdc.parser.Config.SpecialTypes.ObservationType;
-import com.sdc.parser.Config.SpecialTypes.TextResponseType;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.hl7.fhir.r4.model.Observation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Config.SpecialTypes.ObservationType;
+import com.sdc.parser.Config.SpecialTypes.TextResponseType;
 
 import ca.uhn.fhir.context.FhirContext;
 
@@ -36,10 +50,26 @@ public class FormParser {
 		// there should be only 1 child in the body - "ChildItems"
 		Element childItems = (Element) childrenOfBody.get(0);
 		NodeList questionList = getAllQuestionNodes(childItems);
+
+		Stream<Element> sectionElems = ParserHelper.nodeListToElemArray(childItems.getChildNodes()).stream().filter(isSection());
+		List<Section> rootSections = sectionElems
+				.map(sectionElem -> {
+					return convertElemToSection(sectionElem); 
+				}).collect(Collectors.toList()).stream().filter(elem -> elem != null).toList();
+
 		System.out.println("# of questions: " + questionList.getLength());
 		// get the list of questions with selected = "true";
 		ArrayList<Observation> answeredQuestions = getAnsweredQuestions(questionList, Id, ctx, configValues);
 		return answeredQuestions;
+	}
+
+	private static Section convertElemToSection(Element sectionElem) {
+		try {
+			return new Section(sectionElem);
+		} catch (Exception e) {
+			System.out.println("Cannot cast to Section Object");
+			return null;
+		}
 	}
 
 	/**

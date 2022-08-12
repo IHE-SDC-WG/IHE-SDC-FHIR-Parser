@@ -2,17 +2,20 @@ package com.sdc.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.w3c.dom.Element;
 
 public class Section {
 
 	protected String sectionName;
-	protected List<Section> subSections;
-	protected List<Question> questions;
+	protected String sectionTitle;
+	protected String sectionId;
+	protected List<Section> subSections = new ArrayList<>();
+	protected List<Question> questions = new ArrayList<>();
 	private Element sectionElement; // the XML of the form. A section element contains a sectionProperties element
 									// and a childItems element
 	protected Element sectionProperties;
-	protected Element childItems;
+	// protected Element childItems;
 
 	/* base constructor to initialize the Lists */
 	public Section() {
@@ -33,17 +36,20 @@ public class Section {
 		this.setSectionProperties(sectionProperties);
 	}
 
-	public Section(String sectionName, Element sectionProperties, Element childItems) {
-		this(sectionName, sectionProperties);
-		this.setChildItems(childItems);
-	}
+	// public Section(String sectionName, Element sectionProperties, Element childItems) {
+	// 	this(sectionName, sectionProperties);
+	// 	this.setChildItems(childItems);
+	// }
 
 	/* should set the sectionElement and parse the element into a Section */
 	public Section(Element sectionElement) {
-		this();
 		this.sectionElement = sectionElement;
+		this.sectionId = sectionElement.getAttribute("ID");
+		this.sectionTitle = sectionElement.getAttribute("Title");
 
-		/* Parse section here */
+		List<Element> childElems = ParserHelper.nodeListToElemArray(sectionElement.getElementsByTagName("ChildItems").item(0).getChildNodes());
+		this.subSections = childElems.stream().filter(ParserHelper.isSection()).map(elem -> new Section(elem)).toList();
+		this.questions = childElems.stream().filter(ParserHelper.isQuestion()).map(elem -> new Question(elem)).toList();
 	}
 
 	/* Initializers for the Lists below */
@@ -92,13 +98,13 @@ public class Section {
 		this.sectionProperties = sectionProperties;
 	}
 
-	public Element getChildItems() {
-		return this.childItems;
-	}
+	// public Element getChildItems() {
+	// 	return this.childItems;
+	// }
 
-	public void setChildItems(Element childItems) {
-		this.childItems = childItems;
-	}
+	// public void setChildItems(Element childItems) {
+	// 	this.childItems = childItems;
+	// }
 
 	public Element getSectionElement() {
 		return this.sectionElement;
