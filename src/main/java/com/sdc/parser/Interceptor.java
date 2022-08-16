@@ -134,7 +134,7 @@ public class Interceptor {
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(sdcForm));
 			Document document = builder.parse(is);
-			ArrayList<Observation> observations = parseSDCForm(document, ctx, configValues);
+			List<Observation> observations = parseSDCForm(document, ctx, configValues);
 
 			// TODO: Parse reference list
 			List<Reference> ref = null;

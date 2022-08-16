@@ -16,10 +16,13 @@ import static com.sdc.parser.Resource.ObservationHelper.buildObservationResource
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Observation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -29,6 +32,7 @@ import org.w3c.dom.NodeList;
 import com.sdc.parser.Config.ConfigValues;
 import com.sdc.parser.Config.SpecialTypes.ObservationType;
 import com.sdc.parser.Config.SpecialTypes.TextResponseType;
+import com.sdc.parser.Resource.ObservationHelper;
 
 import ca.uhn.fhir.context.FhirContext;
 
@@ -37,7 +41,7 @@ public class FormParser {
 	private static final String TEXT_PARSING_ERROR_MSG = "ERROR. TextQuestion type is not accounted for!!!!!";
 
 
-	public static ArrayList<Observation> parseSDCForm(Document document, FhirContext ctx, ConfigValues configValues) {
+	public static List<Observation> parseSDCForm(Document document, FhirContext ctx, ConfigValues configValues) {
 
 		// get forminstanceVersion and ID
 		String Id = getFormID(document);
@@ -57,10 +61,77 @@ public class FormParser {
 					return convertElemToSection(sectionElem); 
 				}).collect(Collectors.toList()).stream().filter(elem -> elem != null).toList();
 
+		List<Section> allSections = rootSections.stream().map(Section::flatten).flatMap(Collection::stream).toList();
+
 		System.out.println("# of questions: " + questionList.getLength());
-		// get the list of questions with selected = "true";
-		ArrayList<Observation> answeredQuestions = getAnsweredQuestions(questionList, Id, ctx, configValues);
-		return answeredQuestions;
+		List<Observation> answeredQuestions = getAnsweredQuestions(questionList, Id, ctx, configValues);
+		List<Observation> matchedSections = new ArrayList<>();
+
+		answeredQuestions.forEach(question -> {
+			String capQuestionId = question.getCode().getCoding().stream().filter(coding -> coding.getSystem().equals(configValues.getSystemName()))
+					.map(Coding::getCode).findAny().orElse("Unknown");
+			Section matchingSection = getQuestionsSection(allSections, capQuestionId);
+			if (matchingSection != null) {
+				if (matchedSections.stream().anyMatch(sectionMatches(matchingSection))) {
+					Observation secObservation = matchedSections.stream().filter(sectionMatches(matchingSection)).findFirst().get();
+					ObservationHelper.addDerivedAndMemberRelations(secObservation, question);
+				} else {
+					Observation secObservation = matchingSection.toObservation(configValues.getSystemName());
+					ObservationHelper.addDerivedAndMemberRelations(secObservation, question);
+					matchedSections.add(secObservation);
+				}
+			}
+		});
+
+		List<Observation> unmatchedSections = allSections.stream()
+				.filter(section -> !matchedSections.stream().anyMatch(sectionMatches(section)))
+				.map(section -> section.toObservation(configValues.getSystemName())).toList();
+
+		List<Observation> allSectObservations = Stream.of(matchedSections, unmatchedSections).flatMap(Collection::stream).toList();
+		allSectObservations.forEach(sectionObservation -> {
+			Section matchingSection = getObservationsSection(allSections, sectionObservation.getCode().getCodingFirstRep().getCode());
+			List<Observation> subSectionObservations = matchingSection
+					.getSubSections().stream().map(subSection -> allSectObservations.stream()
+							.filter(
+								sec -> {
+									boolean isSubSection = sec.getCode().getCodingFirstRep().getCode().equals(subSection.getID());
+									return isSubSection;
+								}
+							).findFirst().get())
+					.toList();
+			ObservationHelper.addRelationHierarchy(sectionObservation, subSectionObservations);
+		});
+
+		return Stream.of(answeredQuestions, allSectObservations).flatMap(Collection::stream).toList();
+	}
+
+	private static Predicate<? super Observation> sectionMatches(Section matchingSection) {
+		return (Predicate<? super Observation>) sectionObservation -> sectionObservation != null
+				&& sectionObservation.getCode().getCodingFirstRep().getCode().equals(matchingSection.getID());
+	}
+
+	private static Section getObservationsSection(List<Section> sectionList, String sectionId) {
+		return sectionList.stream().filter(section -> section.getID().equals(sectionId)).findFirst().get();
+	}
+
+	private static Section getQuestionsSection(List<Section> sectionList, String capQuestionId) {
+		return sectionList.stream().filter(section -> {
+			Question matchingQuestion = getMatchingQuestion(section, capQuestionId);
+			if (matchingQuestion == null) {
+				Section matchingSection = getQuestionsSection(section.getSubSections(), capQuestionId);
+				if (matchingSection != null) {
+					matchingQuestion = getMatchingQuestion(matchingSection, capQuestionId);
+				}
+			}
+			return matchingQuestion == null;
+		}).findAny().orElse(null);
+	}
+
+	private static Question getMatchingQuestion(Section section, String capQuestionId) {
+		if (section == null) {
+			return null;
+		}
+		return section.getQuestions().stream().filter(secQuestion -> secQuestion.getID().equals(capQuestionId)).findAny().orElse(null);
 	}
 
 	private static Section convertElemToSection(Element sectionElem) {

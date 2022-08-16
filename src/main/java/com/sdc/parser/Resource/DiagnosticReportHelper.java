@@ -19,7 +19,7 @@ public class DiagnosticReportHelper {
     private static final String PROFILE_URL = "http://hl7.org/fhir/us/cancer-reporting/StructureDefinition/us-pathology-diagnostic-report";
 
     public static DiagnosticReport createDiagnosticReport(FhirContext ctx, String sdcForm,
-            Reference patientReference, ArrayList<Observation> observations, ConfigValues configValues) {
+            Reference patientReference, List<Observation> observations, ConfigValues configValues) {
 
         DiagnosticReport diagReport = new DiagnosticReport();
       

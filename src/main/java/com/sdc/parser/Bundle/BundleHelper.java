@@ -48,7 +48,7 @@ public class BundleHelper {
 	private static BundleEntryComponent patientEntry;
 	private static Reference patientReference;
 
-	public static Bundle createBundle(String bundleType, ArrayList<Observation> observations, FhirContext ctx, String sdcForm, ConfigValues configValues)
+	public static Bundle createBundle(String bundleType, List<Observation> observations, FhirContext ctx, String sdcForm, ConfigValues configValues)
 			throws IOException {
 
 		Bundle parentBundle = new Bundle();
@@ -68,7 +68,7 @@ public class BundleHelper {
 		return parentBundle;
 	}
 
-	private static void hydrateEntries(ArrayList<Observation> observations, FhirContext ctx, String sdcForm, ConfigValues configValues) {
+	private static void hydrateEntries(List<Observation> observations, FhirContext ctx, String sdcForm, ConfigValues configValues) {
 		entries = new ArrayList<>();
 		entries.add(patientEntry);
 		entries.add(practitionerEntry);
@@ -104,7 +104,7 @@ public class BundleHelper {
 		return type;
 	}
 
-	private static void hydrateObservations(ArrayList<Observation> observations, FhirContext ctx, ConfigValues configValues) {
+	private static void hydrateObservations(List<Observation> observations, FhirContext ctx, ConfigValues configValues) {
 		observations.forEach(obs -> {
 			List<Reference> obsPerfomerRefs = ((Practitioner) practitionerEntry.getResource()).getIdentifier().stream()
 					.filter(i -> i.getSystem().equals(configValues.getPractitionerConfig().getHl7().getKey()))

@@ -71,22 +71,32 @@ public class ObservationHelper {
 		// codeableconcept
 		List<Observation> observations = addListItemsToCodeableConcept(listItemElements, configValues,
 				initialObservation, obsType);
-		addObservationMetaData(questionElement, id, observations, separator, configValues);
+		observations.forEach(observation -> {
+			addObservationMetadata(questionElement, configValues, observation);
+		});
 		builtObservations.addAll(observations);
 
 		NodeList subQuestionsList = questionElement.getElementsByTagName("Question");
 
 		// Track the hierarchy of observations with derivedfrom and hasmember
 		List<Observation> subAnswers = FormParser.getAnsweredQuestions(subQuestionsList, id, ctx, configValues);
-		if (subAnswers.size() > 0) {
-			for (Observation subObservation : subAnswers) {
-				subObservation
-						.addDerivedFrom(new Reference().setIdentifier(initialObservation.getIdentifierFirstRep()));
-				initialObservation.addHasMember(new Reference().setIdentifier(subObservation.getIdentifierFirstRep()));
-			}
-			builtObservations.addAll(subAnswers);
-		}
+		addRelationHierarchy(initialObservation, subAnswers);
+		builtObservations.addAll(subAnswers);
 		return builtObservations;
+	}
+
+	public static void addRelationHierarchy(Observation parentObservation, List<Observation> subObservations) {
+		if (subObservations.size() > 0) {
+			for (Observation subObservation : subObservations) {
+				addDerivedAndMemberRelations(parentObservation, subObservation);
+			}
+		}
+	}
+
+	public static void addDerivedAndMemberRelations(Observation derivedResource, Observation memberResource) {
+		memberResource
+				.addDerivedFrom(new Reference().setIdentifier(derivedResource.getIdentifierFirstRep()));
+		derivedResource.addHasMember(new Reference().setIdentifier(memberResource.getIdentifierFirstRep()));
 	}
 
 	private static List<Observation> addListItemsToCodeableConcept(ArrayList<Element> listItemElements,
@@ -129,16 +139,23 @@ public class ObservationHelper {
 		}
 	}
 
-	private static void addObservationMetaData(Element element, String id, List<Observation> observations,
-			String separator,
-			ConfigValues configValues) {
-		observations.forEach(observation -> {
-					observation.addIdentifier().setSystem(configValues.getSystemName())
-							.setValue(getUUID());
-					observation.setStatus(ObservationStatus.FINAL);
-					observation.getCode().addCoding().setSystem(configValues.getSystemName())
-							.setCode(element.getAttribute("ID"))
-							.setDisplay(element.getAttribute("title"));
-				});
+	public static void addObservationMetadata(Observation observation, String elemId, String elemTitle, String systemName) {
+		observation.addIdentifier().setSystem(systemName)
+				.setValue(getUUID());
+		observation.setStatus(ObservationStatus.FINAL);
+		observation.getCode().addCoding().setSystem(systemName)
+				.setCode(elemId)
+				.setDisplay(elemTitle);
+	}
+
+	private static void addObservationMetadata(Element element, ConfigValues configValues, Observation observation) {
+		String elemId = element.getAttribute("ID");
+		String elemTitle = element.getAttribute("title");
+		addObservationMetadata(configValues, observation, elemId, elemTitle);
+	}
+
+	private static void addObservationMetadata(ConfigValues configValues, Observation observation, String elemId, String elemTitle) {
+		String systemName = configValues.getSystemName();
+		addObservationMetadata(observation, elemId, elemTitle, systemName);
 	}
 }
