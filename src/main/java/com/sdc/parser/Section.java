@@ -1,5 +1,6 @@
 package com.sdc.parser;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 // import java.util.AbstractMap.SimpleEntry;
@@ -16,7 +17,7 @@ public class Section extends ObservationElement {
 	// protected Element childItems;
 
 	/* base constructor to initialize the Lists */
-	public Section() {
+	public Section() throws IOException {
 		this.initSubSections();
 	}
 
@@ -24,34 +25,45 @@ public class Section extends ObservationElement {
 	 * constructors to create Sections from parsed information (if parse within this
 	 * class is not desired)
 	 */
-	public Section(String sectionName) {
+	public Section(String sectionName) throws IOException {
 		this();
 		this.setName(sectionName);
 	}
 
-	public Section(String sectionName, Element sectionProperties) {
+	public Section(String sectionName, Element sectionProperties) throws IOException {
 		this(sectionName);
 		this.setSectionProperties(sectionProperties);
 	}
 
 
-	public Section(Element sectionElement, Section parent) {
+	public Section(Element sectionElement, Section parent) throws IOException {
 		this.element = sectionElement;
 		this.ID = sectionElement.getAttribute("ID");
 		this.title = sectionElement.getAttribute("title");
 
 		List<Element> childElems = ParserHelper.nodeListToElemArray(sectionElement.getElementsByTagName("ChildItems").item(0).getChildNodes());
-		this.subSections = childElems.stream().filter(ParserHelper.isSection()).map(elem -> new Section(elem, parent)).toList();
+		this.subSections = childElems.stream().filter(ParserHelper.isSection()).map(elem -> {
+			try {
+				return new Section(elem, parent);
+			} catch (IOException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}).toList();
 		this.questions = childElems.stream().filter(ParserHelper.isQuestion()).map(elem -> new Question(elem)).toList();
 	}
 
 
 	/* should set the sectionElement and parse the element into a Section */
-	public Section(Element sectionElement) {
+	public Section(Element sectionElement) throws IOException {
 		this(sectionElement, null);
 	}
 
+	public Observation toObservation() {
+		return this.toObservation(this.systemName);
+	}
 
+	
 	public Observation toObservation(String systemName) {
 		Observation observation = new Observation();
 		ObservationHelper.addObservationMetadata(observation, this.getID(), this.getTitle(), systemName);;

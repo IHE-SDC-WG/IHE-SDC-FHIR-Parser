@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.hl7.fhir.r4.model.Coding;
@@ -40,9 +39,7 @@ public class FormParser {
 
 	private static final String TEXT_PARSING_ERROR_MSG = "ERROR. TextQuestion type is not accounted for!!!!!";
 
-
 	public static List<Observation> parseSDCForm(Document document, FhirContext ctx, ConfigValues configValues) {
-
 		// get forminstanceVersion and ID
 		String Id = getFormID(document);
 		System.out.println("Form ID: " + Id);
@@ -54,64 +51,44 @@ public class FormParser {
 		// there should be only 1 child in the body - "ChildItems"
 		Element childItems = (Element) childrenOfBody.get(0);
 		NodeList questionList = getAllQuestionNodes(childItems);
-
-		Stream<Element> sectionElems = ParserHelper.nodeListToElemArray(childItems.getChildNodes()).stream().filter(isSection());
-		List<Section> rootSections = sectionElems
-				.map(sectionElem -> {
-					return convertElemToSection(sectionElem); 
-				}).collect(Collectors.toList()).stream().filter(elem -> elem != null).toList();
-
-		List<Section> allSections = rootSections.stream().map(Section::flatten).flatMap(Collection::stream).toList();
-
-		System.out.println("# of questions: " + questionList.getLength());
 		List<Observation> answeredQuestions = getAnsweredQuestions(questionList, Id, ctx, configValues);
-		List<Observation> matchedSections = new ArrayList<>();
+		List<Section> allSections = ParserHelper.nodeListToElemArray(childItems.getChildNodes()).stream().filter(isSection())
+				.map(elem -> convertElemToSection(elem)).filter(elem -> elem != null).map(Section::flatten).flatMap(Collection::stream).toList();
 
+		List<Observation> matchedSections = getMatchingSections(configValues, answeredQuestions, allSections);
+		List<Observation> unmatchedSections = allSections.stream().filter(section -> !matchedSections.stream().anyMatch(sectionMatches(section)))
+				.map(Section::toObservation).toList();
+				
+		System.out.println("# of questions: " + questionList.getLength());
+
+		return Stream.of(answeredQuestions,
+				ObservationHelper.populateRelationHierarchies(allSections, Stream.of(matchedSections, unmatchedSections).flatMap(Collection::stream).toList()))
+				.flatMap(Collection::stream).toList();
+	}
+
+	private static List<Observation> getMatchingSections(ConfigValues configValues, List<Observation> answeredQuestions, List<Section> allSections) {
+		List<Observation> matchedSections = new ArrayList<>();
 		answeredQuestions.forEach(question -> {
 			String capQuestionId = question.getCode().getCoding().stream().filter(coding -> coding.getSystem().equals(configValues.getSystemName()))
 					.map(Coding::getCode).findAny().orElse("Unknown");
 			Section matchingSection = getQuestionsSection(allSections, capQuestionId);
+			Observation secObservation;
 			if (matchingSection != null) {
 				if (matchedSections.stream().anyMatch(sectionMatches(matchingSection))) {
-					Observation secObservation = matchedSections.stream().filter(sectionMatches(matchingSection)).findFirst().get();
-					ObservationHelper.addDerivedAndMemberRelations(secObservation, question);
+					secObservation = matchedSections.stream().filter(sectionMatches(matchingSection)).findFirst().get();
 				} else {
-					Observation secObservation = matchingSection.toObservation(configValues.getSystemName());
-					ObservationHelper.addDerivedAndMemberRelations(secObservation, question);
+					secObservation = matchingSection.toObservation(configValues.getSystemName());
 					matchedSections.add(secObservation);
 				}
+				ObservationHelper.addDerivedAndMemberRelations(secObservation, question);
 			}
 		});
-
-		List<Observation> unmatchedSections = allSections.stream()
-				.filter(section -> !matchedSections.stream().anyMatch(sectionMatches(section)))
-				.map(section -> section.toObservation(configValues.getSystemName())).toList();
-
-		List<Observation> allSectObservations = Stream.of(matchedSections, unmatchedSections).flatMap(Collection::stream).toList();
-		allSectObservations.forEach(sectionObservation -> {
-			Section matchingSection = getObservationsSection(allSections, sectionObservation.getCode().getCodingFirstRep().getCode());
-			List<Observation> subSectionObservations = matchingSection
-					.getSubSections().stream().map(subSection -> allSectObservations.stream()
-							.filter(
-								sec -> {
-									boolean isSubSection = sec.getCode().getCodingFirstRep().getCode().equals(subSection.getID());
-									return isSubSection;
-								}
-							).findFirst().get())
-					.toList();
-			ObservationHelper.addRelationHierarchy(sectionObservation, subSectionObservations);
-		});
-
-		return Stream.of(answeredQuestions, allSectObservations).flatMap(Collection::stream).toList();
+		return matchedSections;
 	}
 
 	private static Predicate<? super Observation> sectionMatches(Section matchingSection) {
 		return (Predicate<? super Observation>) sectionObservation -> sectionObservation != null
 				&& sectionObservation.getCode().getCodingFirstRep().getCode().equals(matchingSection.getID());
-	}
-
-	private static Section getObservationsSection(List<Section> sectionList, String sectionId) {
-		return sectionList.stream().filter(section -> section.getID().equals(sectionId)).findFirst().get();
 	}
 
 	private static Section getQuestionsSection(List<Section> sectionList, String capQuestionId) {
@@ -158,7 +135,7 @@ public class FormParser {
 			Element questionElement = (Element) questionList.item(i);
 			String questionID = questionElement.getAttribute("ID");
 
-			//Subquestions get handled during the parent-question handling. This prevents repeated observations
+			// Subquestions get handled during the parent-question handling. This prevents repeated observations
 			if (isObservationAlreadyHandled(observations, questionID)) {
 				continue;
 			}
@@ -173,19 +150,16 @@ public class FormParser {
 					for (int j = 0; j < listItemList.getLength(); j++) {
 						Element listItemElement = (Element) listItemList.item(j);
 						if (listItemElement.hasAttribute("selected")) {
-							Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode()
-									.getParentNode();
+							Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode().getParentNode();
 							if (parentQuestion.getAttribute("ID").equals(questionElement.getAttribute("ID"))) {
 								System.out.println("QUESTION.ID: " + questionElement.getAttribute("ID"));
 								System.out.println("LISTITEM.ID: " + listItemElement.getAttribute("ID"));
 								System.out.println("LISTITEM.TITLE: " + listItemElement.getAttribute("title"));
-								System.out
-										.println("*******************************************************************");
+								System.out.println("*******************************************************************");
 								// observation = buildListObservationResource(questionElement, listItemElement,
 								// Id, ctx);
-								observations
-										.addAll(buildObservationResources(ObservationType.LIST, null, questionElement,
-												new ArrayList<>(Arrays.asList(listItemElement)), null, Id, ctx, configValues));
+								observations.addAll(buildObservationResources(ObservationType.LIST, null, questionElement,
+										new ArrayList<>(Arrays.asList(listItemElement)), null, Id, ctx, configValues));
 							}
 
 						}
@@ -197,8 +171,7 @@ public class FormParser {
 					for (int j = 0; j < listItemList.getLength(); j++) {
 						Element listItemElement = (Element) listItemList.item(j);
 						if (listItemElement.hasAttribute("selected")) {
-							Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode()
-									.getParentNode();
+							Element parentQuestion = (Element) listItemElement.getParentNode().getParentNode().getParentNode();
 							if (parentQuestion.getAttribute("ID").equals(questionID)) {
 								listElementsAnswered.add(listItemElement);
 							}
@@ -208,12 +181,10 @@ public class FormParser {
 					// Now if there are selected answers then only add them as components
 					if (!listElementsAnswered.isEmpty()) {
 						// observation = buildMultiSelectObservationResource(questionElement, Id, ctx);
-						observations
-								.addAll(buildObservationResources(ObservationType.MULTISELECT, null, questionElement,
-										listElementsAnswered, null, Id, ctx, configValues));
+						observations.addAll(buildObservationResources(ObservationType.MULTISELECT, null, questionElement, listElementsAnswered, null, Id, ctx,
+								configValues));
 						for (Observation observation : observations) {
-							String encoded = ctx.newXmlParser().setPrettyPrint(true)
-									.encodeResourceToString(observation);
+							String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
 							System.out.println(encoded);
 							System.out.println("*******************************************************************");
 						}
@@ -234,8 +205,7 @@ public class FormParser {
 							break;
 						}
 						String response = getTextResponseForType(typeAsString, textQuestionResponse);
-						observations.addAll(buildObservationResources(ObservationType.TEXT, type, questionElement, null,
-								response, Id, ctx, configValues));
+						observations.addAll(buildObservationResources(ObservationType.TEXT, type, questionElement, null, response, Id, ctx, configValues));
 						break;
 					}
 				}

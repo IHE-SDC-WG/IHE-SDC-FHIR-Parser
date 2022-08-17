@@ -1,17 +1,13 @@
 package com.sdc.parser.Resource;
 
+import static com.sdc.parser.ParserHelper.getUUID;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-
-import com.sdc.parser.FormParser;
-import com.sdc.parser.Config.ConfigValues;
-import com.sdc.parser.Config.SpecialTypes.ObservationType;
-import com.sdc.parser.Config.SpecialTypes.TextResponseType;
-import static com.sdc.parser.ParserHelper.getUUID;
 
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -25,6 +21,12 @@ import org.hl7.fhir.r4.model.StringType;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import com.sdc.parser.FormParser;
+import com.sdc.parser.Section;
+import com.sdc.parser.Config.ConfigValues;
+import com.sdc.parser.Config.SpecialTypes.ObservationType;
+import com.sdc.parser.Config.SpecialTypes.TextResponseType;
+
 import ca.uhn.fhir.context.FhirContext;
 
 public class ObservationHelper {
@@ -34,14 +36,9 @@ public class ObservationHelper {
 			FhirContext ctx, ConfigValues configValues) {
 		Observation initialObservation = new Observation();
 		ArrayList<Observation> builtObservations = new ArrayList<Observation>();
-		String separator = "";
-
 		if (obsType.equals(ObservationType.LIST)) {
-			separator = "#";
 		} else if (obsType.equals(ObservationType.MULTISELECT)) {
-			separator = ".";
 		} else if (obsType.equals(ObservationType.TEXT)) {
-			separator = "#";
 			switch (textResponseType) {
 				case INTEGER:
 					initialObservation.setValue(new IntegerType(Integer.parseInt(textResponse))).getValueIntegerType();
@@ -83,6 +80,22 @@ public class ObservationHelper {
 		addRelationHierarchy(initialObservation, subAnswers);
 		builtObservations.addAll(subAnswers);
 		return builtObservations;
+	}
+
+	public static List<Observation> populateRelationHierarchies(List<Section> sectionObjs, List<Observation> sectionObservations) {
+		sectionObservations.forEach(sectionObservation -> {
+			Section matchingSection = getObservationsSection(sectionObjs, sectionObservation.getCode().getCodingFirstRep().getCode());
+			List<Observation> subSectionObservations = matchingSection.getSubSections().stream().map(subSection -> sectionObservations.stream().filter(sec -> {
+				boolean isSubSection = sec.getCode().getCodingFirstRep().getCode().equals(subSection.getID());
+				return isSubSection;
+			}).findFirst().get()).toList();
+			ObservationHelper.addRelationHierarchy(sectionObservation, subSectionObservations);
+		});
+		return sectionObservations;
+	}
+
+	private static Section getObservationsSection(List<Section> sectionList, String sectionId) {
+		return sectionList.stream().filter(section -> section.getID().equals(sectionId)).findFirst().get();
 	}
 
 	public static void addRelationHierarchy(Observation parentObservation, List<Observation> subObservations) {

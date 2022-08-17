@@ -1,6 +1,5 @@
 package com.sdc.parser.Resource;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.hl7.fhir.r4.model.Attachment;

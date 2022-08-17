@@ -1,27 +1,35 @@
 package com.sdc.parser;
 
+import java.io.IOException;
+
 import org.w3c.dom.Element;
+
+import com.sdc.parser.Config.ConfigValues;
 
 class ObservationElement {
     String ID;
     String title;
     String name;
     Element element;
+    String systemName;
 
     /*
      * constructors to create Questions from parsed information (if parse within this class is not desired)
      */
 
-    public ObservationElement() {
+    public ObservationElement() throws IOException {
+        this.systemName = (new ConfigValues()).getSystemName();
     }
 
     public ObservationElement(String title, String ID, String name) {
+        super();
 		this.title = title;
 		this.ID = ID;
 		this.name = name;
 	}
 
     public ObservationElement(Element element) {
+        super();
 		this.setElement(element);
 		this.setID(this.getElement().getAttribute("ID"));
 
