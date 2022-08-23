@@ -1,6 +1,8 @@
 package com.sdc.parser.Config;
 
+import java.util.AbstractMap;
 import java.util.HashMap;
+import java.util.AbstractMap.SimpleEntry;
 
 public abstract class Agent {
     private String identifier;
@@ -9,15 +11,25 @@ public abstract class Agent {
     private HashMap<String, String> system;
     private String address;
     private String telecom;
+    private AbstractMap.SimpleEntry<String, String> hl7;
+
+    public AbstractMap.SimpleEntry<String, String> getHl7() {
+        return hl7;
+    }
+
+    public void setHl7(AbstractMap.SimpleEntry<String, String> hl7) {
+        this.hl7 = hl7;
+    }
 
     protected Agent(String identifier, String firstName, String lastName, HashMap<String, String> system, String address,
-            String telecom) {
+            String telecom, String hl7Key, String hl7Value) {
         this.identifier = identifier;
         this.firstName = firstName;
         this.lastName = lastName;
         this.system = system;
         this.address = address;
         this.telecom = telecom;
+        this.hl7 = new SimpleEntry<String,String>(hl7Key, hl7Value);
     }
 
     /**

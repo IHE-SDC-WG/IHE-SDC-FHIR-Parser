@@ -3,8 +3,13 @@ package com.sdc.parser;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.hl7.fhir.r4.model.ResourceType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -188,5 +193,49 @@ public class ParserHelper {
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		Instant instant = timestamp.toInstant();
 		return instant.toString();
+	}
+
+	public static String createReferenceString(ResourceType referenceType, String referenceValue) {
+		return referenceType.name() + '/' + referenceValue;
+	}
+
+	public static <T extends Node> List<T> nodeListToArrayofType(NodeList nodeList, Class<T> outputType) {
+
+		Stream<T> tStream = removeWhiteSpaces(nodeList).stream().map(node -> 
+			{
+				try {
+					return (T)node;
+				} catch (Exception e) {
+					System.out.println("Cannot cast: " + node + " to type: " + outputType);
+					return null;
+				}
+			}
+		);
+		 
+		List<T> tList = tStream.collect(Collectors.toList());
+		List<T> filteredTList = tList.stream().collect(Collectors.toList());
+		return filteredTList.stream().filter(elem -> elem != null).collect(Collectors.toList());
+		// return filteredTList;
+	}
+
+	public static List<Element> nodeListToElemArray(NodeList nodeList) {
+		return nodeListToArrayofType(nodeList, Element.class);
+	}
+
+	public static Predicate<? super Element> isSection() {
+		String tagName = "Section";
+		return equalsTagName(tagName);
+	}
+
+	public static Predicate<? super Element> isQuestion() {
+		String tagName = "Question";
+		return equalsTagName(tagName);
+	}
+
+	public static Predicate<? super Element> equalsTagName(String tagName) {
+		return elem -> {
+			String elemName = elem.getTagName();
+			return (elemName.equals(tagName));
+		};
 	}
 }

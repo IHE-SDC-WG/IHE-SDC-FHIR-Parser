@@ -27,14 +27,12 @@ package com.sdc.parser;
 import static com.sdc.parser.Bundle.BundleHelper.createBundle;
 import static com.sdc.parser.FormParser.parseSDCForm;
 import static com.sdc.parser.ParserHelper.getTimeStamp;
-import static com.sdc.parser.ParserHelper.getUUID;
 
-import java.util.List;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
@@ -48,8 +46,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.sdc.parser.Config.ConfigValues;
-
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Observation;
@@ -57,6 +53,8 @@ import org.hl7.fhir.r4.model.Reference;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import com.sdc.parser.Config.ConfigValues;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.MethodOutcome;
@@ -134,7 +132,7 @@ public class Interceptor {
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			InputSource is = new InputSource(new StringReader(sdcForm));
 			Document document = builder.parse(is);
-			ArrayList<Observation> observations = parseSDCForm(document, ctx, configValues);
+			List<Observation> observations = parseSDCForm(document, ctx, configValues);
 
 			// TODO: Parse reference list
 			List<Reference> ref = null;
