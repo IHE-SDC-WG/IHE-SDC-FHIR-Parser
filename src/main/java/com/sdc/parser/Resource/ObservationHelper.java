@@ -4,6 +4,9 @@ import static com.sdc.parser.ParserHelper.getUUID;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -22,6 +25,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import com.sdc.parser.FormParser;
+import com.sdc.parser.ParserHelper;
 import com.sdc.parser.Section;
 import com.sdc.parser.Config.ConfigValues;
 import com.sdc.parser.Config.SpecialTypes.ObservationType;
@@ -132,7 +136,7 @@ public class ObservationHelper {
 						}
 						observationToEdit.getValueCodeableConcept().addCoding()
 								.setSystem(configValues.getSystemName())
-								.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
+								.setCode(element.getAttribute("ID")).setDisplay(getDisplayTitleText(element));
 					});
 
 				splitObservations.forEach(obs -> vccTextReplacement(listItemElements, obs));
@@ -163,8 +167,27 @@ public class ObservationHelper {
 
 	private static void addObservationMetadata(Element element, ConfigValues configValues, Observation observation) {
 		String elemId = element.getAttribute("ID");
-		String elemTitle = element.getAttribute("title");
+		String elemTitle = getDisplayTitleText(element);
 		addObservationMetadata(configValues, observation, elemId, elemTitle);
+	}
+
+	private static String getDisplayTitleText(Element element) {
+		List<String> ignoredValues = List.of("{no text}" );
+		Optional<String> reportText = getReportTextValue(element);
+		boolean preferTitle = reportText.isEmpty() || ignoredValues.contains(reportText.get());
+		String elemTitle = preferTitle ? element.getAttribute("title") : reportText.get();
+		return elemTitle;
+	}
+
+	private static Optional<String> getReportTextValue(Element element) {
+		NodeList propertyNodes = element.getElementsByTagName("Property");
+		String nameKey = "propName";
+		String valKey = "val";
+		Predicate<? super Element> hasPropName = prop -> prop.hasAttribute(nameKey);
+		Predicate<? super Element> isReportText = prop -> prop.getAttribute(nameKey).equals("reportText");
+		Predicate<? super Element> hasVal = prop -> prop.hasAttribute(valKey);
+		Function<? super Element, String> getValKey = prop -> prop.getAttribute(valKey);
+		return ParserHelper.nodeListToElemArray(propertyNodes).stream().filter(hasPropName).filter(isReportText).filter(hasVal).map(getValKey).findFirst();
 	}
 
 	private static void addObservationMetadata(ConfigValues configValues, Observation observation, String elemId, String elemTitle) {
