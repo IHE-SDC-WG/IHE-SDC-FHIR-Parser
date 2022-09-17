@@ -24,7 +24,9 @@ public class MessageHeaderHelper extends ResourceHelper<MessageHeader> {
 
 	public MessageHeader initializeResource(FhirContext ctx) {
 		MessageHeader messageHeader = new MessageHeader();
-		messageHeader.getText().setStatus(NarrativeStatus.GENERATED);
+		//messageHeader.getText().setStatus(NarrativeStatus.GENERATED);
+		messageHeader.getText().setStatus(org.hl7.fhir.r4.model.Narrative.NarrativeStatus.GENERATED);
+		messageHeader.getText().setDivAsString("<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">fake Observation</div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>6547</td></tr></tbody></table></div>");
 		messageHeader.getEventCoding().setSystem(EVENT_CODING_SYSTEM_NAME).setCode("admin-notify");
 		messageHeader.setSource(
 			new MessageSourceComponent()

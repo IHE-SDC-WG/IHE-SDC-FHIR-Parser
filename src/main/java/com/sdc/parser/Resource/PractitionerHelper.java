@@ -11,6 +11,8 @@ public class PractitionerHelper {
 	public static Practitioner createPractitioner(PractitionerConfig practitionerConfig) {
 		Practitioner pract = new Practitioner();
         pract.getMeta().addProfile("http://hl7.org/fhir/us/core/StructureDefinition/us-core-practitioner");
+		pract.getText().setStatus(org.hl7.fhir.r4.model.Narrative.NarrativeStatus.GENERATED);
+		pract.getText().setDivAsString("<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">fake Observation</div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>6547</td></tr></tbody></table></div>");
 		pract.addName().setFamily(practitionerConfig.getLastName()).addGiven(practitionerConfig.getFirstName());
 
 		 for (Entry<String, String> entry : practitionerConfig.getSystem().entrySet()) {

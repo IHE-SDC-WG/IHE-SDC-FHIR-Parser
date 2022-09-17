@@ -24,6 +24,9 @@ public class DiagnosticReportHelper {
       
         // meta 
         diagReport.getMeta().addProfile(PROFILE_URL);
+        // narrative
+        diagReport.getText().setStatus(org.hl7.fhir.r4.model.Narrative.NarrativeStatus.GENERATED);
+        diagReport.getText().setDivAsString("<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">fake Observation</div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>6547</td></tr></tbody></table></div>");
         //category 
         diagReport.getCategoryFirstRep().addCoding().setCode("LP7839-6").setSystem("http://loinc.org").setDisplay("Pathology"); 
         //code

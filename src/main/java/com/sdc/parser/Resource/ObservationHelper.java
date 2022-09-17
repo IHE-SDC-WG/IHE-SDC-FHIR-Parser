@@ -159,6 +159,8 @@ public class ObservationHelper {
 	public static void addObservationMetadata(Observation observation, String elemId, String elemTitle, String systemName) {
 		observation.addIdentifier().setSystem(systemName)
 				.setValue(getUUID());
+		observation.getText().setStatus(org.hl7.fhir.r4.model.Narrative.NarrativeStatus.GENERATED);
+		observation.getText().setDivAsString("<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">fake Observation</div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>6547</td></tr></tbody></table></div>");
 		observation.setStatus(ObservationStatus.FINAL);
 		observation.getCode().addCoding().setSystem(systemName)
 				.setCode(elemId)
