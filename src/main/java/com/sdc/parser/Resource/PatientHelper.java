@@ -7,7 +7,7 @@ import com.sdc.parser.Config.PatientConfig;
 import org.hl7.fhir.r4.model.Patient;
 
 public class PatientHelper {
-	public static Patie/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/code/electron-sandbox/workbench/workbench.htmlnt createPatient(PatientConfig patientConfig) {
+	public static Patient createPatient(PatientConfig patientConfig) {
 		Patient patient = new Patient();
 		patient.getMeta().addProfile("http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient");
 		patient.getText().setStatus(org.hl7.fhir.r4.model.Narrative.NarrativeStatus.GENERATED);

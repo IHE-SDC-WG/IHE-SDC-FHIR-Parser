@@ -6,6 +6,7 @@ import static com.sdc.parser.Resource.PatientHelper.createPatient;
 import static com.sdc.parser.Resource.PractitionerHelper.createPractitioner;
 import static com.sdc.parser.Resource.PractitionerHelper.generatePractitionerDisplay;
 import static com.sdc.parser.Resource.PractitionerRoleHelper.createPractitionerRolePractitioner;
+import static com.sdc.parser.Resource.SpecimenHelper.createSpecimen;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,6 +60,7 @@ public class BundleHelper {
 		patientReference = new Reference(ParserHelper.createReferenceString(patientEntry.getResource().getResourceType(), patientConfig.getIdentifier()))
 				.setDisplay(patientConfig.getFullName());
 		practitionerEntry = createBundleEntry(getUUID(), createPractitioner(configValues.getPractitionerConfig()));
+		specimenEntry = createBundleEntry(getUUID(), createSpecimen)
 
 		hydrateEntries(observations, ctx, sdcForm, configValues);
 		hydrateObservations(observations, ctx, configValues);
