@@ -191,33 +191,39 @@ public class FormParser {
 					}
 				}
 			} else if (isTextQuestion) {
-				Element textQuestionResponse = getTextQuestionResponse(questionElement);
-				TextResponseType responseType = null;
-
-				for (TextResponseType type : TextResponseType.values()) {
-					String typeAsString = type.name().toLowerCase();
-					Element textQuestionOfType = getTextQuestionOfType(typeAsString, textQuestionResponse);
-					// Type is accounted for
-					if (textQuestionOfType != null) {
-						responseType = type;
-						if (isTextQuestionResponseEmpty(textQuestionOfType)) {
-							// no response so don't store the observation
-							break;
-						}
-						String response = getTextResponseForType(typeAsString, textQuestionResponse);
-						observations.addAll(buildObservationResources(ObservationType.TEXT, type, questionElement, null, response, Id, ctx, configValues));
-						break;
-					}
-				}
-				if (responseType == null) {
-					System.out.println(TEXT_PARSING_ERROR_MSG);
-				}
+				extractResponseFromQuestion(Id, ctx, configValues, observations, questionElement, true);
 			} else {
 				System.out.println("Question NOT List or Text");
 				System.out.println("QUESTION.ID: " + questionElement.getAttribute("ID"));
 			}
 		}
 		return observations;
+	}
+
+	public static void extractResponseFromQuestion(String Id, FhirContext ctx, ConfigValues configValues, List<Observation> observations, Element questionElement, boolean isTextQuestion) {
+		Element questionResponse = ParserHelper.getQuestionResponse(questionElement, isTextQuestion);
+		TextResponseType responseType = null;
+
+		for (TextResponseType type : TextResponseType.values()) {
+			String typeAsString = type.name().toLowerCase();
+			Element textQuestionOfType = getTextQuestionOfType(typeAsString, questionResponse);
+			// Type is accounted for
+			if (textQuestionOfType != null) {
+				responseType = type;
+
+				//TODO: need to generify this checker for list question responses
+				if (isTextQuestionResponseEmpty(textQuestionOfType)) {
+					// no response so don't store the observation
+					break;
+				}
+				String response = getTextResponseForType(typeAsString, questionResponse);
+				observations.addAll(buildObservationResources(ObservationType.TEXT, type, questionElement, null, response, Id, ctx, configValues));
+				break;
+			}
+		}
+		if (responseType == null) {
+			System.out.println(TEXT_PARSING_ERROR_MSG);
+		}
 	}
 
 	private static boolean isObservationAlreadyHandled(ArrayList<Observation> observations, String questionID) {

@@ -145,9 +145,18 @@ public class ParserHelper {
 	}
 
 	public static Element getTextQuestionResponse(Element questionElement) {
-		Element textQuestionElement = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
-		Element responseElement = (Element) textQuestionElement.getElementsByTagName("Response").item(0);
-		return responseElement;
+		return getQuestionResponse(questionElement, true);
+	}
+
+	public static Element getQuestionResponse(Element questionElement, boolean isTextQuestion) {
+		String responseTagName = isTextQuestion ? "ResponseField" : "ListItemResponseField";
+		Element textQuestionElement = (Element) questionElement.getElementsByTagName(responseTagName).item(0);
+		if (textQuestionElement == null) {
+			return null;
+		} else {
+			Element responseElement = (Element) textQuestionElement.getElementsByTagName("Response").item(0);
+			return responseElement;
+		}
 	}
 
 	public static String getTextResponseForType(String type, Element textQuestionResponse) {
@@ -161,11 +170,15 @@ public class ParserHelper {
 	 * @return The textQuestion of that type, or else null
 	 */
 	public static Element getTextQuestionOfType(String type, Element textQuestionResponse) {
-		NodeList textElementList = textQuestionResponse.getElementsByTagName(type);
-		if (textElementList.getLength() > 0) {
-			return (Element) textElementList.item(0);
+		if (textQuestionResponse == null) {
+			return null;
+		} else {
+			NodeList textElementList = textQuestionResponse.getElementsByTagName(type);
+			if (textElementList.getLength() > 0) {
+				return (Element) textElementList.item(0);
+			}
+			return null;
 		}
-		return null;
 	}
 
 	public static boolean isTextQuestionResponseEmpty(Element textElementResponse) {

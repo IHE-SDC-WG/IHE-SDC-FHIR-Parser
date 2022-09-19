@@ -37,6 +37,13 @@ public class ObservationHelper {
 		Observation initialObservation = new Observation();
 		ArrayList<Observation> builtObservations = new ArrayList<Observation>();
 		if (obsType.equals(ObservationType.LIST)) {
+			// When the solution to a question is a list, store the listitem response as a
+			// codeableconcept
+			List<Observation> observations = createObservationsFromListItems(listItemElements, configValues, initialObservation, obsType, questionElement, id, ctx);
+			observations.forEach(observation -> {
+				addObservationMetadata(questionElement, configValues, observation);
+			});
+			builtObservations.addAll(observations);
 		} else if (obsType.equals(ObservationType.MULTISELECT)) {
 		} else if (obsType.equals(ObservationType.TEXT)) {
 			switch (textResponseType) {
@@ -63,15 +70,6 @@ public class ObservationHelper {
 			}
 		}
 		;
-
-		// When the solution to a question is a list, store the listitem response as a
-		// codeableconcept
-		List<Observation> observations = addListItemsToCodeableConcept(listItemElements, configValues,
-				initialObservation, obsType);
-		observations.forEach(observation -> {
-			addObservationMetadata(questionElement, configValues, observation);
-		});
-		builtObservations.addAll(observations);
 
 		NodeList subQuestionsList = questionElement.getElementsByTagName("Question");
 
@@ -112,9 +110,9 @@ public class ObservationHelper {
 		derivedResource.addHasMember(new Reference().setIdentifier(memberResource.getIdentifierFirstRep()));
 	}
 
-	private static List<Observation> addListItemsToCodeableConcept(ArrayList<Element> listItemElements,
+	private static List<Observation> createObservationsFromListItems(ArrayList<Element> listItemElements,
 			ConfigValues configValues,
-			Observation observation, ObservationType obsType) {
+			Observation observation, ObservationType obsType, Element questionElement, String id, FhirContext ctx) {
 		List<Observation> splitObservations = new ArrayList<>() {
 			{
 				add(observation);
@@ -133,6 +131,7 @@ public class ObservationHelper {
 						observationToEdit.getValueCodeableConcept().addCoding()
 								.setSystem(configValues.getSystemName())
 								.setCode(element.getAttribute("ID")).setDisplay(element.getAttribute("title"));
+						FormParser.extractResponseFromQuestion(id, ctx, configValues, splitObservations, questionElement, false);
 					});
 
 				splitObservations.forEach(obs -> vccTextReplacement(listItemElements, obs));
