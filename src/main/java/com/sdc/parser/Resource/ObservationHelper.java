@@ -19,6 +19,7 @@ import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DecimalType;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Observation.ObservationComponentComponent;
 import org.hl7.fhir.r4.model.Observation.ObservationStatus;
 import org.hl7.fhir.r4.model.Reference;
@@ -66,6 +67,7 @@ public class ObservationHelper {
 		return builtObservations;
 	}
 
+	//TODO: default to Quantity when there are Units to Parse
 	public static Type responseToTypeObj(ResponseType responseType, String responseString) {
 		Type type;
 		switch (responseType) {
@@ -73,7 +75,7 @@ public class ObservationHelper {
 			type = new IntegerType(responseString);
 			break;
 		case DECIMAL:
-			type = new DecimalType(responseString);
+			type = new Quantity(Double.parseDouble(responseString));
 			break;
 		case STRING:
 			type = new StringType(responseString);
