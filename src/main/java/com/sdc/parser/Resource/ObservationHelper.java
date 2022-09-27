@@ -38,23 +38,20 @@ import com.sdc.parser.Config.SpecialTypes.ResponseType;
 import ca.uhn.fhir.context.FhirContext;
 
 public class ObservationHelper {
-	public static ArrayList<Observation> buildObservationResources(ObservationType obsType,
-			ResponseType responseType,
-			Element questionElement, ArrayList<Element> listItemElements, String responseString, String id,
-			FhirContext ctx, ConfigValues configValues) {
+	public static ArrayList<Observation> buildObservationResources(ObservationType obsType, ResponseType responseType, Element questionElement,
+			ArrayList<Element> listItemElements, String responseString, String id, FhirContext ctx, ConfigValues configValues) {
 		Observation initialObservation = new Observation();
 		ArrayList<Observation> builtObservations = new ArrayList<Observation>();
 		if (obsType.equals(ObservationType.LIST)) {
 		} else if (obsType.equals(ObservationType.MULTISELECT)) {
 		} else if (obsType.equals(ObservationType.TEXT)) {
-			initialObservation.setValue(responseToTypeObject(responseType, responseString))
-			;
-		};
+			initialObservation.setValue(responseToTypeObj(responseType, responseString));
+		}
+		;
 
 		// When the solution to a question is a list, store the listitem response as a
 		// codeableconcept
-		List<Observation> observations = addListItemsToCodeableConcept(listItemElements, configValues,
-				initialObservation, obsType);
+		List<Observation> observations = addListItemsToCodeableConcept(listItemElements, configValues, initialObservation, obsType);
 		observations.forEach(observation -> {
 			addObservationMetadata(questionElement, configValues, observation);
 		});
@@ -69,7 +66,7 @@ public class ObservationHelper {
 		return builtObservations;
 	}
 
-	public static Type responseToTypeObject(ResponseType responseType, String responseString) {
+	public static Type responseToTypeObj(ResponseType responseType, String responseString) {
 		Type type;
 		switch (responseType) {
 		case INTEGER:
@@ -122,14 +119,12 @@ public class ObservationHelper {
 	}
 
 	public static void addDerivedAndMemberRelations(Observation derivedResource, Observation memberResource) {
-		memberResource
-				.addDerivedFrom(new Reference().setIdentifier(derivedResource.getIdentifierFirstRep()));
+		memberResource.addDerivedFrom(new Reference().setIdentifier(derivedResource.getIdentifierFirstRep()));
 		derivedResource.addHasMember(new Reference().setIdentifier(memberResource.getIdentifierFirstRep()));
 	}
 
-	private static List<Observation> addListItemsToCodeableConcept(ArrayList<Element> listItemElements,
-			ConfigValues configValues,
-			Observation observation, ObservationType obsType) {
+	private static List<Observation> addListItemsToCodeableConcept(ArrayList<Element> listItemElements, ConfigValues configValues, Observation observation,
+			ObservationType obsType) {
 		List<Observation> splitObservations = new ArrayList<>() {
 			{
 				if (!obsType.equals(ObservationType.MULTISELECT))
@@ -138,68 +133,82 @@ public class ObservationHelper {
 		};
 		if (listItemElements != null) {
 			observation.setValue(new CodeableConcept());
-			listItemElements.stream().filter(liElem -> liElem.getElementsByTagName("ChildItems").getLength() == 0)
-					.forEach(liElement -> {
-						Observation observationToEdit = observation;
-						// Add response as Component to the Observation
-						NodeList responses = liElement.getElementsByTagName("Response");
-						//TODO: split into one for every selected option
-						if (obsType.equals(ObservationType.MULTISELECT)) {
-							Observation newObservation = observation.copy();
-							observationToEdit = newObservation;
-							splitObservations.add(observationToEdit);
-						}
-						Coding liCode = new Coding(configValues.getSystemName(), liElement.getAttribute("ID"), getDisplayTitleText(liElement));
-						CodeableConcept liValueCodeableConcept = new CodeableConcept(liCode);
-						observationToEdit.setValue(liValueCodeableConcept);
-						Element response;
-						if (responses.getLength() > 0) {
-							response = (Element) responses.item(0);
-							if (responses.getLength() > 1) {
-								System.out.println("More than one response for ListItem. May want to Investigate.");
-							}
-							ObservationComponentComponent component = new ObservationComponentComponent(liValueCodeableConcept);
-							NodeList responseTypeElems = response.getChildNodes();
-							Element responseTypeElem;
-							if (responseTypeElems.getLength() > 0) {
-								responseTypeElem = (Element) responseTypeElems.item(1);
-								if (responses.getLength() > 3)
-									System.out.println("More than one response for ListItem. May want to Investigate.");
-								try {
-									component.setValue(responseToTypeObject(ResponseType.stringToResponseType(responseTypeElem.getTagName()),
-											responseTypeElem.getAttribute("val")));
-								} catch (Exception e) {
-									e.printStackTrace();
-								}
-							}
-							observationToEdit.addComponent(component);
-						}
-					});
+			listItemElements.stream().filter(liElem -> liElem.getElementsByTagName("ChildItems").getLength() == 0).forEach(liElement -> {
+				Element response;
+				Observation observationToEdit = observation;
+				NodeList responses = liElement.getElementsByTagName("Response");
+				Coding liCode = new Coding(configValues.getSystemName(), liElement.getAttribute("ID"), getDisplayTitleText(liElement));
+				CodeableConcept liValueCodeableConcept = new CodeableConcept(liCode);
 
-				splitObservations.forEach(obs -> vccTextReplacement(listItemElements, obs));
+				// Create new observation for each selected ListItem
+				if (obsType.equals(ObservationType.MULTISELECT)) {
+					Observation newObservation = observation.copy();
+					observationToEdit = newObservation;
+					splitObservations.add(observationToEdit);
+				}
+				observationToEdit.setValue(liValueCodeableConcept);
+
+				// Add response to Component Object
+				if (responses.getLength() > 0) {
+					response = getElemFromIndex(responses, 0, 1);
+					ObservationComponentComponent component = new ObservationComponentComponent(liValueCodeableConcept);
+					NodeList responseTypeElems = response.getChildNodes();
+					Element responseTypeElem;
+					if (responseTypeElems.getLength() > 0) {
+						responseTypeElem = getResponseTypeElem(response);
+						ResponseType responseType = null;
+						try { // Only if the val of the Response is not empty
+							responseType = ResponseType.strToResponseType(responseTypeElem.getTagName());
+							component.setValue(responseToTypeObj(responseType, responseTypeElem.getAttribute("val")));
+							observationToEdit.addComponent(component);
+						} catch (Exception e) {
+							//Do Nothing
+						}
+					}
+				}
+			});
+			// splitObservations.forEach(obs -> vccTextReplacement(listItemElements, obs));
 		}
 		return splitObservations;
+	}
+
+	private static Element getElemFromIndex(NodeList nodeList, int expectedElemIndex, int maxLength) {
+		Element response;
+		response = (Element) nodeList.item(expectedElemIndex);
+		if (nodeList.getLength() > maxLength) {
+			System.out.println("More than expect num of Elems in List. May want to Investigate.");
+		}
+		return response;
+	}
+
+	private static Element getResponseTypeElem(Element response) {
+		NodeList responseElemChildren = response.getChildNodes();
+		Element responseTypeElem = null;
+		for (int i = 0; i < responseElemChildren.getLength(); i++) {
+			try {
+				ResponseType.strToResponseType(responseElemChildren.item(i).getNodeName());
+				responseTypeElem = (Element) responseElemChildren.item(i);
+				break;
+			} catch (Exception e) {
+				continue;
+			}
+		}
+		return responseTypeElem;
 	}
 
 	private static void vccTextReplacement(ArrayList<Element> listItemElements, Observation observation) {
 		String vccText = observation.getValueCodeableConcept().getText();
 		if (vccText == null) {
-			listItemElements.stream()
-					.map(e -> e.getElementsByTagName("string"))
-					.filter(stringEl -> stringEl.getLength() > 0)
-					.map(stringEl -> ((Element) stringEl.item(0)).getAttribute("val"))
-					.filter(listItemString -> listItemString.length() > 0)
+			listItemElements.stream().map(e -> e.getElementsByTagName("string")).filter(stringEl -> stringEl.getLength() > 0)
+					.map(stringEl -> ((Element) stringEl.item(0)).getAttribute("val")).filter(listItemString -> listItemString.length() > 0)
 					.forEach(listItemString -> observation.getValueCodeableConcept().setText(listItemString));
 		}
 	}
 
 	public static void addObservationMetadata(Observation observation, String elemId, String elemTitle, String systemName) {
-		observation.addIdentifier().setSystem(systemName)
-				.setValue(getUUID());
+		observation.addIdentifier().setSystem(systemName).setValue(getUUID());
 		observation.setStatus(ObservationStatus.FINAL);
-		observation.getCode().addCoding().setSystem(systemName)
-				.setCode(elemId)
-				.setDisplay(elemTitle);
+		observation.getCode().addCoding().setSystem(systemName).setCode(elemId).setDisplay(elemTitle);
 	}
 
 	private static void addObservationMetadata(Element element, ConfigValues configValues, Observation observation) {
@@ -209,7 +218,7 @@ public class ObservationHelper {
 	}
 
 	private static String getDisplayTitleText(Element element) {
-		List<String> ignoredValues = List.of("{no text}" );
+		List<String> ignoredValues = List.of("{no text}");
 		Optional<String> reportText = getReportTextValue(element);
 		boolean preferTitle = reportText.isEmpty() || ignoredValues.contains(reportText.get());
 		String elemTitle = preferTitle ? element.getAttribute("title") : reportText.get();

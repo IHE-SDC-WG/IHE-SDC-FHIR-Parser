@@ -17,16 +17,20 @@ public final class SpecialTypes {
 		private ResponseType(String value) {
 			this.value = value;
 		}
-		public static ResponseType stringToResponseType(String string) throws Exception {
+		public static ResponseType strToResponseType(String string) {
 			ResponseType type = null;
 			for (ResponseType rType : ResponseType.values()) {
 				if (rType.value.equals(string)){
 					type = rType;
 				}
 			}
-			if (type == null) {
-				throw new Exception("Type: " + string + " not expected");
-			}
+			// if (type == null) {
+				// try {
+					// throw new Exception("Type: " + string + " not expected");
+				// } catch (Exception e) {
+				// 	e.printStackTrace();
+				// }
+			// }
 			return type;
 		}
 	}
