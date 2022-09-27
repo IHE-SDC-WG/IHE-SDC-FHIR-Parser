@@ -160,7 +160,7 @@ public class ParserHelper {
 	 * @param textQuestionResponse
 	 * @return The textQuestion of that type, or else null
 	 */
-	public static Element getTextQuestionOfType(String type, Element textQuestionResponse) {
+	public static Element getResponseString(String type, Element textQuestionResponse) {
 		NodeList textElementList = textQuestionResponse.getElementsByTagName(type);
 		if (textElementList.getLength() > 0) {
 			return (Element) textElementList.item(0);
@@ -168,7 +168,7 @@ public class ParserHelper {
 		return null;
 	}
 
-	public static boolean isTextQuestionResponseEmpty(Element textElementResponse) {
+	public static boolean isQuestionResponseEmpty(Element textElementResponse) {
 		boolean valEmpty = !textElementResponse.hasAttribute("val");
 		if (!valEmpty) {
 			return textElementResponse.getAttribute("val").length() == 0;

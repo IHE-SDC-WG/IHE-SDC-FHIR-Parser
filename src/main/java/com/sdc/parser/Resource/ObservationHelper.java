@@ -14,13 +14,17 @@ import javax.ws.rs.core.Response.Status;
 
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.DecimalType;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Observation.ObservationComponentComponent;
 import org.hl7.fhir.r4.model.Observation.ObservationStatus;
-import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.TimeType;
+import org.hl7.fhir.r4.model.Type;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
@@ -29,44 +33,23 @@ import com.sdc.parser.ParserHelper;
 import com.sdc.parser.Section;
 import com.sdc.parser.Config.ConfigValues;
 import com.sdc.parser.Config.SpecialTypes.ObservationType;
-import com.sdc.parser.Config.SpecialTypes.TextResponseType;
+import com.sdc.parser.Config.SpecialTypes.ResponseType;
 
 import ca.uhn.fhir.context.FhirContext;
 
 public class ObservationHelper {
 	public static ArrayList<Observation> buildObservationResources(ObservationType obsType,
-			TextResponseType textResponseType,
-			Element questionElement, ArrayList<Element> listItemElements, String textResponse, String id,
+			ResponseType responseType,
+			Element questionElement, ArrayList<Element> listItemElements, String responseString, String id,
 			FhirContext ctx, ConfigValues configValues) {
 		Observation initialObservation = new Observation();
 		ArrayList<Observation> builtObservations = new ArrayList<Observation>();
 		if (obsType.equals(ObservationType.LIST)) {
 		} else if (obsType.equals(ObservationType.MULTISELECT)) {
 		} else if (obsType.equals(ObservationType.TEXT)) {
-			switch (textResponseType) {
-				case INTEGER:
-					initialObservation.setValue(new IntegerType(Integer.parseInt(textResponse))).getValueIntegerType();
-					break;
-				case DECIMAL:
-					initialObservation.setValue(new Quantity(Double.parseDouble(textResponse))).getValueQuantity();
-					break;
-				case STRING:
-					initialObservation.setValue(new StringType(textResponse)).getValueStringType();
-					break;
-				case BOOLEAN:
-					initialObservation.setValue(new BooleanType(Boolean.parseBoolean(textResponse)))
-							.getValueBooleanType();
-					break;
-				case DATETIME:
-					initialObservation.setValue(new DateTimeType(textResponse)).getValueDateTimeType();
-					break;
-				default:
-					String notSupportedError = "ERROR: BUILDING OBSERVATION FOR UNSUPPORTED TYPE";
-					throw new WebApplicationException(
-							Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
-			}
-		}
-		;
+			initialObservation.setValue(responseToTypeObject(responseType, responseString))
+			;
+		};
 
 		// When the solution to a question is a list, store the listitem response as a
 		// codeableconcept
@@ -84,6 +67,34 @@ public class ObservationHelper {
 		addRelationHierarchy(initialObservation, subAnswers);
 		builtObservations.addAll(subAnswers);
 		return builtObservations;
+	}
+
+	public static Type responseToTypeObject(ResponseType responseType, String responseString) {
+		Type type;
+		switch (responseType) {
+		case INTEGER:
+			type = new IntegerType(responseString);
+			break;
+		case DECIMAL:
+			type = new DecimalType(responseString);
+			break;
+		case STRING:
+			type = new StringType(responseString);
+			break;
+		case BOOLEAN:
+			type = new BooleanType(responseString);
+			break;
+		case DATE:
+		case DATETIME:
+			type = new DateTimeType(responseString);
+		case TIME:
+			type = new TimeType(responseString);
+			break;
+		default:
+			String notSupportedError = "ERROR: BUILDING OBSERVATION FOR UNSUPPORTED TYPE";
+			throw new WebApplicationException(Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
+		}
+		return type;
 	}
 
 	public static List<Observation> populateRelationHierarchies(List<Section> sectionObjs, List<Observation> sectionObservations) {
@@ -121,22 +132,48 @@ public class ObservationHelper {
 			Observation observation, ObservationType obsType) {
 		List<Observation> splitObservations = new ArrayList<>() {
 			{
-				add(observation);
+				if (!obsType.equals(ObservationType.MULTISELECT))
+					add(observation);
 			}
 		};
 		if (listItemElements != null) {
 			observation.setValue(new CodeableConcept());
-			listItemElements.stream()
-					.forEach(element -> {
+			listItemElements.stream().filter(liElem -> liElem.getElementsByTagName("ChildItems").getLength() == 0)
+					.forEach(liElement -> {
 						Observation observationToEdit = observation;
+						// Add response as Component to the Observation
+						NodeList responses = liElement.getElementsByTagName("Response");
+						//TODO: split into one for every selected option
 						if (obsType.equals(ObservationType.MULTISELECT)) {
 							Observation newObservation = observation.copy();
 							observationToEdit = newObservation;
 							splitObservations.add(observationToEdit);
 						}
-						observationToEdit.getValueCodeableConcept().addCoding()
-								.setSystem(configValues.getSystemName())
-								.setCode(element.getAttribute("ID")).setDisplay(getDisplayTitleText(element));
+						Coding liCode = new Coding(configValues.getSystemName(), liElement.getAttribute("ID"), getDisplayTitleText(liElement));
+						CodeableConcept liValueCodeableConcept = new CodeableConcept(liCode);
+						observationToEdit.setValue(liValueCodeableConcept);
+						Element response;
+						if (responses.getLength() > 0) {
+							response = (Element) responses.item(0);
+							if (responses.getLength() > 1) {
+								System.out.println("More than one response for ListItem. May want to Investigate.");
+							}
+							ObservationComponentComponent component = new ObservationComponentComponent(liValueCodeableConcept);
+							NodeList responseTypeElems = response.getChildNodes();
+							Element responseTypeElem;
+							if (responseTypeElems.getLength() > 0) {
+								responseTypeElem = (Element) responseTypeElems.item(1);
+								if (responses.getLength() > 3)
+									System.out.println("More than one response for ListItem. May want to Investigate.");
+								try {
+									component.setValue(responseToTypeObject(ResponseType.stringToResponseType(responseTypeElem.getTagName()),
+											responseTypeElem.getAttribute("val")));
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
+							observationToEdit.addComponent(component);
+						}
 					});
 
 				splitObservations.forEach(obs -> vccTextReplacement(listItemElements, obs));

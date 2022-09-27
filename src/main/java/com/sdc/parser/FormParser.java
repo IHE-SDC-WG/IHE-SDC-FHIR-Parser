@@ -5,13 +5,13 @@ import static com.sdc.parser.ParserHelper.getAllQuestionNodes;
 import static com.sdc.parser.ParserHelper.getBodyElement;
 import static com.sdc.parser.ParserHelper.getFormID;
 import static com.sdc.parser.ParserHelper.getListFieldEelementToCheckForMultiSelect;
-import static com.sdc.parser.ParserHelper.getTextQuestionOfType;
+import static com.sdc.parser.ParserHelper.getResponseString;
 import static com.sdc.parser.ParserHelper.getTextQuestionResponse;
 import static com.sdc.parser.ParserHelper.getTextResponseForType;
 import static com.sdc.parser.ParserHelper.isQuestionAListQuestion;
 import static com.sdc.parser.ParserHelper.isQuestionATextQuestion;
+import static com.sdc.parser.ParserHelper.isQuestionResponseEmpty;
 import static com.sdc.parser.ParserHelper.isSection;
-import static com.sdc.parser.ParserHelper.isTextQuestionResponseEmpty;
 import static com.sdc.parser.Resource.ObservationHelper.buildObservationResources;
 
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ import org.w3c.dom.NodeList;
 
 import com.sdc.parser.Config.ConfigValues;
 import com.sdc.parser.Config.SpecialTypes.ObservationType;
-import com.sdc.parser.Config.SpecialTypes.TextResponseType;
+import com.sdc.parser.Config.SpecialTypes.ResponseType;
 import com.sdc.parser.Resource.ObservationHelper;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -100,7 +100,7 @@ public class FormParser {
 					matchingQuestion = getMatchingQuestion(matchingSection, capQuestionId);
 				}
 			}
-			return matchingQuestion == null;
+			return matchingQuestion != null;
 		}).findAny().orElse(null);
 	}
 
@@ -192,15 +192,15 @@ public class FormParser {
 				}
 			} else if (isTextQuestion) {
 				Element textQuestionResponse = getTextQuestionResponse(questionElement);
-				TextResponseType responseType = null;
+				ResponseType responseType = null;
 
-				for (TextResponseType type : TextResponseType.values()) {
+				for (ResponseType type : ResponseType.values()) {
 					String typeAsString = type.name().toLowerCase();
-					Element textQuestionOfType = getTextQuestionOfType(typeAsString, textQuestionResponse);
+					Element textQuestionOfType = getResponseString(typeAsString, textQuestionResponse);
 					// Type is accounted for
 					if (textQuestionOfType != null) {
 						responseType = type;
-						if (isTextQuestionResponseEmpty(textQuestionOfType)) {
+						if (isQuestionResponseEmpty(textQuestionOfType)) {
 							// no response so don't store the observation
 							break;
 						}
