@@ -144,10 +144,21 @@ public class ParserHelper {
 		return false;
 	}
 
-	public static Element getTextQuestionResponse(Element questionElement) {
-		Element textQuestionElement = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
+	public static Element getQuestionResponse(Element questionElement) {
+		Element textQuestionElement = getResponseField(questionElement);
 		Element responseElement = (Element) textQuestionElement.getElementsByTagName("Response").item(0);
 		return responseElement;
+	}
+
+	public static Element getQuestionResponseUnits(Element questionElement) {
+		Element textQuestionElement = getResponseField(questionElement);
+		Element responseUnits = (Element) textQuestionElement.getElementsByTagName("ResponseUnits").item(0);
+		return responseUnits;
+	}
+	
+	private static Element getResponseField(Element questionElement) {
+		Element responseField = (Element) questionElement.getElementsByTagName("ResponseField").item(0);
+		return responseField;
 	}
 
 	public static String getTextResponseForType(String type, Element textQuestionResponse) {

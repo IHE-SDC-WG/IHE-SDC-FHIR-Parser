@@ -1,17 +1,6 @@
 package com.sdc.parser;
 
-import static com.sdc.parser.ParserHelper.getAllChildrenFromBody;
-import static com.sdc.parser.ParserHelper.getAllQuestionNodes;
-import static com.sdc.parser.ParserHelper.getBodyElement;
-import static com.sdc.parser.ParserHelper.getFormID;
-import static com.sdc.parser.ParserHelper.getListFieldEelementToCheckForMultiSelect;
-import static com.sdc.parser.ParserHelper.getResponseString;
-import static com.sdc.parser.ParserHelper.getTextQuestionResponse;
-import static com.sdc.parser.ParserHelper.getTextResponseForType;
-import static com.sdc.parser.ParserHelper.isQuestionAListQuestion;
-import static com.sdc.parser.ParserHelper.isQuestionATextQuestion;
-import static com.sdc.parser.ParserHelper.isQuestionResponseEmpty;
-import static com.sdc.parser.ParserHelper.isSection;
+import static com.sdc.parser.ParserHelper.*;
 import static com.sdc.parser.Resource.ObservationHelper.buildObservationResources;
 
 import java.util.ArrayList;
@@ -159,7 +148,7 @@ public class FormParser {
 								// observation = buildListObservationResource(questionElement, listItemElement,
 								// Id, ctx);
 								observations.addAll(buildObservationResources(ObservationType.LIST, null, questionElement,
-										new ArrayList<>(Arrays.asList(listItemElement)), null, Id, ctx, configValues));
+										new ArrayList<>(Arrays.asList(listItemElement)), null, null, Id, ctx, configValues));
 							}
 
 						}
@@ -181,7 +170,7 @@ public class FormParser {
 					// Now if there are selected answers then only add them as components
 					if (!listElementsAnswered.isEmpty()) {
 						// observation = buildMultiSelectObservationResource(questionElement, Id, ctx);
-						observations.addAll(buildObservationResources(ObservationType.MULTISELECT, null, questionElement, listElementsAnswered, null, Id, ctx,
+						observations.addAll(buildObservationResources(ObservationType.MULTISELECT, null, questionElement, listElementsAnswered, null, null, Id, ctx,
 								configValues));
 						for (Observation observation : observations) {
 							String encoded = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(observation);
@@ -191,7 +180,8 @@ public class FormParser {
 					}
 				}
 			} else if (isTextQuestion) {
-				Element textQuestionResponse = getTextQuestionResponse(questionElement);
+				Element textQuestionResponse = getQuestionResponse(questionElement);
+				Element questionResponseUnits = getQuestionResponseUnits(questionElement);
 				ResponseType responseType = null;
 
 				for (ResponseType type : ResponseType.values()) {
@@ -205,7 +195,8 @@ public class FormParser {
 							break;
 						}
 						String response = getTextResponseForType(typeAsString, textQuestionResponse);
-						observations.addAll(buildObservationResources(ObservationType.TEXT, type, questionElement, null, response, Id, ctx, configValues));
+
+						observations.addAll(buildObservationResources(ObservationType.TEXT, type, questionElement, null, response, questionResponseUnits, Id, ctx, configValues));
 						break;
 					}
 				}

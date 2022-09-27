@@ -40,13 +40,13 @@ import ca.uhn.fhir.context.FhirContext;
 
 public class ObservationHelper {
 	public static ArrayList<Observation> buildObservationResources(ObservationType obsType, ResponseType responseType, Element questionElement,
-			ArrayList<Element> listItemElements, String responseString, String id, FhirContext ctx, ConfigValues configValues) {
+			ArrayList<Element> listItemElements, String responseString, Element questionResponseUnits, String id, FhirContext ctx, ConfigValues configValues) {
 		Observation initialObservation = new Observation();
 		ArrayList<Observation> builtObservations = new ArrayList<Observation>();
 		if (obsType.equals(ObservationType.LIST)) {
 		} else if (obsType.equals(ObservationType.MULTISELECT)) {
 		} else if (obsType.equals(ObservationType.TEXT)) {
-			initialObservation.setValue(responseToTypeObj(responseType, responseString));
+			initialObservation.setValue(responseToTypeObj(responseType, responseString, questionResponseUnits));
 		}
 		;
 
@@ -67,12 +67,11 @@ public class ObservationHelper {
 		return builtObservations;
 	}
 
-	//TODO: default to Quantity when there are Units to Parse
-	public static Type responseToTypeObj(ResponseType responseType, String responseString) {
+	public static Type responseToTypeObj(ResponseType responseType, String responseString, Element responseUnits) {
 		Type type;
 		switch (responseType) {
 		case INTEGER:
-			type = new IntegerType(responseString);
+			type = responseUnits == null ? new IntegerType(responseString) : new Quantity(Integer.parseInt(responseString));
 			break;
 		case DECIMAL:
 			type = new Quantity(Double.parseDouble(responseString));
@@ -92,6 +91,9 @@ public class ObservationHelper {
 		default:
 			String notSupportedError = "ERROR: BUILDING OBSERVATION FOR UNSUPPORTED TYPE";
 			throw new WebApplicationException(Response.status(Status.BAD_REQUEST).entity(notSupportedError).build());
+		}
+		if (type instanceof Quantity && responseUnits != null) {
+			((Quantity) type).setUnit(responseUnits.getAttribute("val"));
 		}
 		return type;
 	}
@@ -161,7 +163,8 @@ public class ObservationHelper {
 						ResponseType responseType = null;
 						try { // Only if the val of the Response is not empty
 							responseType = ResponseType.strToResponseType(responseTypeElem.getTagName());
-							component.setValue(responseToTypeObj(responseType, responseTypeElem.getAttribute("val")));
+							Element responseUnits = (Element)((Element)response.getParentNode()).getElementsByTagName("ResponseUnits").item(0);
+							component.setValue(responseToTypeObj(responseType, responseTypeElem.getAttribute("val"), responseUnits));
 							observationToEdit.addComponent(component);
 						} catch (Exception e) {
 							//Do Nothing
